@@ -19,6 +19,7 @@ To build and run this project, you can use the following commands:
 *   **Components:** The main application component is `src/app/page.tsx`, and the layout is defined in `src/app/layout.tsx`.
 *   **Dependencies:** The project uses `bun` as the package manager. The dependencies are listed in `package.json`.
 *   **Testing:** Database tests are located in `tests/model.test.ts` and utilize a `TestDB` helper class (`tests/lib/db.ts`). The project is transitioning from `vitest` to `bun test` for running tests.
+*   **Documentation:** When editing documentation files (e.g., `README.md`), **NEVER** modify sections that are explicitly marked or clearly identifiable as human-written. These sections are sacrosanct and must remain untouched by automated processes.
 
 ## Pre-commit Checks
 
