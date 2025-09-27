@@ -16,13 +16,14 @@ interface EntryListApiResponse {
 }
 
 interface EntryListPageProps {
-  searchParams: { page?: string; pageSize?: string };
+  searchParams: Promise<{ page?: string; pageSize?: string }>;
 }
 
 export default function EntryListPage({ searchParams }: EntryListPageProps) {
   const router = useRouter();
-  const page = parseInt(searchParams.page || "1");
-  const pageSize = parseInt(searchParams.pageSize || "10");
+  const params = React.use(searchParams);
+  const page = parseInt(params.page || "1");
+  const pageSize = parseInt(params.pageSize || "10");
 
   const [apiResponse, setApiResponse] = React.useState<EntryListApiResponse | null>(null);
   const [loading, setLoading] = React.useState(true);
