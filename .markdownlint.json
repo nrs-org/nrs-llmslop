@@ -1,0 +1,6 @@
+{
+  "ignore": [
+    "docs/nrs/**",
+    "docs/nrs-lib-ts/**"
+  ]
+}
