@@ -1,0 +1,6 @@
+[submodule "docs/nrs"]
+	path = docs/nrs
+	url = https://github.com/nrs-org/nrs
+[submodule "docs/nrs-lib-ts"]
+	path = docs/nrs-lib-ts
+	url = https://github.com/nrs-org/nrs-lib-ts

@@ -14,12 +14,27 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+enum GlobalContext {
+  global
+}
+
+model NRSContext {
+  id                 GlobalContext @id @default(global)
+  factorScoreWeights Json
+}
+
 model Entry {
   id        String   @id
   title     String
   bestGirl  String?
   progress  EntryProgress?
   additionalSources Json?
+  dah_meta Json?
+
+  // NRS-related fields
+  impacts     ImpactContribution[]
+  relations   RelationContribution[]
+  referencedBy RelationReference[]
 }
 
 model EntryProgress {
@@ -36,4 +51,48 @@ enum EntryStatus {
   ABANDONED
   PAUSED
   NOT_STARTED
+}
+
+model Impact {
+  id           String  @id
+  name         String
+  scoreVector  Json
+  contributions ImpactContribution[]
+}
+
+model ImpactContribution {
+  impactId String
+  impact   Impact @relation(fields: [impactId], references: [id])
+  entryId  String
+  entry    Entry  @relation(fields: [entryId], references: [id])
+  contributingWeight Json
+
+  @@id([impactId, entryId])
+}
+
+model Relation {
+  id            String   @id
+  name          String
+  references    RelationReference[]
+  contributions RelationContribution[]
+}
+
+model RelationReference {
+  relationId String
+  relation   Relation @relation(fields: [relationId], references: [id])
+  entryId    String
+  entry      Entry    @relation(fields: [entryId], references: [id])
+  transformMatrix Json
+
+  @@id([relationId, entryId])
+}
+
+model RelationContribution {
+  relationId String
+  relation   Relation @relation(fields: [relationId], references: [id])
+  entryId    String
+  entry      Entry    @relation(fields: [entryId], references: [id])
+  contributingWeight Json
+
+  @@id([relationId, entryId])
 }
