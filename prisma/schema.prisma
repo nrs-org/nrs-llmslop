@@ -53,10 +53,26 @@ enum EntryStatus {
   NOT_STARTED
 }
 
+enum VisualType {
+  animated
+  rpg3dGame
+  animatedShort
+  animatedMV
+  visualNovel
+  manga
+  animatedGachaCardArt
+  gachaCardArt
+  lightNovel
+  semiAnimatedMV
+  staticMV
+  albumArt
+}
+
 model Impact {
   id           String  @id
   name         String
   scoreVector  Json
+  dah_meta     Json?
   contributions ImpactContribution[]
 }
 
@@ -73,6 +89,7 @@ model ImpactContribution {
 model Relation {
   id            String   @id
   name          String
+  dah_meta      Json?
   references    RelationReference[]
   contributions RelationContribution[]
 }
