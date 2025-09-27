@@ -1,7 +1,7 @@
 import { Entry, Impact, Relation, EntryProgress, ImpactContribution, RelationContribution } from "@/generated/prisma";
 
 interface EntryDetailsPageProps {
-  params: { id: string };
+  params: Promise<{ id: string }>;
 }
 
 interface EntryWithRelations extends Entry {
@@ -12,7 +12,7 @@ interface EntryWithRelations extends Entry {
 }
 
 export default async function EntryDetailsPage({ params }: EntryDetailsPageProps) {
-  const { id } = params;
+  const { id } = await params;
 
   const res = await fetch(`http://localhost:3000/api/entries/${id}`, {
     cache: "no-store",
