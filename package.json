@@ -6,7 +6,8 @@
     "dev": "next dev --turbopack",
     "build": "next build --turbopack",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "typecheck:test": "bunx tsc --noEmit -p tests/tsconfig.json"
   },
   "dependencies": {
     "@prisma/client": "^6.16.2",
@@ -25,6 +26,7 @@
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "autoprefixer": "^10.4.21",
+    "bun-types": "^1.2.22",
     "eslint": "^9",
     "eslint-config-next": "15.5.4",
     "playwright": "^1.55.1",

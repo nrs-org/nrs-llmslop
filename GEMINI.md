@@ -19,3 +19,10 @@ To build and run this project, you can use the following commands:
 *   **Components:** The main application component is `src/app/page.tsx`, and the layout is defined in `src/app/layout.tsx`.
 *   **Dependencies:** The project uses `bun` as the package manager. The dependencies are listed in `package.json`.
 *   **Testing:** Database tests are located in `tests/model.test.ts` and utilize a `TestDB` helper class (`tests/lib/db.ts`). The project is transitioning from `vitest` to `bun test` for running tests.
+
+## Pre-commit Checks
+
+Before committing any changes, ensure the following checks pass:
+
+*   **Run Tests:** `bun test`
+*   **Typecheck:** `bunx tsc --noEmit`
