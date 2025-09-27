@@ -6,7 +6,7 @@
     "dev": "next dev --turbopack",
     "build": "next build --turbopack",
     "start": "next start",
-    "lint": "eslint .",
+    "lint": "eslint . --fix",
     "markdownlint": "bunx markdownlint --fix docs/ --ignore docs/nrs/ --ignore docs/nrs-lib-ts/"
   },
   "dependencies": {
