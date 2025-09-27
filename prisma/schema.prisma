@@ -1,0 +1,39 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Entry {
+  id        String   @id
+  title     String
+  bestGirl  String?
+  progress  EntryProgress?
+  additionalSources Json?
+}
+
+model EntryProgress {
+  id        String   @id
+  entry     Entry    @relation(fields: [id], references: [id], onDelete: Cascade)
+  status    EntryStatus
+  length_seconds Int?
+  episode   Int?
+}
+
+enum EntryStatus {
+  FINISHED
+  IN_PROGRESS
+  ABANDONED
+  PAUSED
+  NOT_STARTED
+}
