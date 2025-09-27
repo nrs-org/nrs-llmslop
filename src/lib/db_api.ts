@@ -1,4 +1,13 @@
 import { PrismaClient, GlobalContext } from "../generated/prisma";
+import {
+  EntryCreateDTO,
+  EntryProgressCreateDTO,
+  ImpactCreateDTO,
+  ImpactContributionCreateDTO,
+  RelationCreateDTO,
+  RelationContributionCreateDTO,
+  RelationReferenceCreateDTO,
+} from "./db_types";
 
 const prisma = new PrismaClient();
 
@@ -22,26 +31,35 @@ export const getEntryDetails = (id: string) => {
   });
 };
 
-export const createEntryWithProgress = (entryData: any, progressData: any) => {
-  const { id, ...restOfProgressData } = progressData;
+export const createEntryWithProgress = (
+  entryData: EntryCreateDTO,
+  progressData: EntryProgressCreateDTO
+) => {
   return prisma.entry.create({
     data: {
       ...entryData,
       progress: {
-        create: restOfProgressData,
+        create: progressData,
       },
     },
   });
 };
 
-export const updateEntryProgress = (id: string, progressData: any) => {
+export const updateEntryProgress = (
+  id: string,
+  progressData: Partial<EntryProgressCreateDTO>
+) => {
   return prisma.entryProgress.update({
     where: { id },
     data: progressData,
   });
 };
 
-export const addImpactToEntry = (entryId: string, impactData: any, contributionData: any) => {
+export const addImpactToEntry = (
+  entryId: string,
+  impactData: ImpactCreateDTO,
+  contributionData: ImpactContributionCreateDTO
+) => {
   return prisma.impact.create({
     data: {
       ...impactData,
@@ -57,9 +75,9 @@ export const addImpactToEntry = (entryId: string, impactData: any, contributionD
 
 export const addRelationToEntry = (
   entryId: string,
-  relationData: any,
-  contributionData: any,
-  referenceData: any
+  relationData: RelationCreateDTO,
+  contributionData: RelationContributionCreateDTO,
+  referenceData: RelationReferenceCreateDTO
 ) => {
   return prisma.relation.create({
     data: {
@@ -73,7 +91,7 @@ export const addRelationToEntry = (
       references: {
         create: {
           entry: { connect: { id: referenceData.entryId } },
-          ...referenceData,
+          transformMatrix: referenceData.transformMatrix,
         },
       },
     },
