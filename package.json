@@ -7,7 +7,8 @@
     "build": "next build --turbopack",
     "start": "next start",
     "lint": "eslint",
-    "typecheck:test": "bunx tsc --noEmit -p tests/tsconfig.json"
+    "typecheck:test": "bunx tsc --noEmit -p tests/tsconfig.json",
+    "markdownlint": "bunx markdownlint --fix docs/ --ignore docs/nrs/ --ignore docs/nrs-lib-ts/"
   },
   "dependencies": {
     "@prisma/client": "^6.16.2",

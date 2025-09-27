@@ -10,6 +10,7 @@ To build and run this project, you can use the following commands:
 *   **Build:** `bun build`
 *   **Start:** `bun start`
 *   **Test:** `bun test` (using Bun's native test runner)
+*   **Markdownlint:** `bun run markdownlint` (to check and fix Markdown files)
 
 ## Development Conventions
 
@@ -27,4 +28,4 @@ Before committing any changes, ensure the following checks pass:
 
 *   **Run Tests:** `bun test`
 *   **Typecheck:** `bunx tsc --noEmit`
-*   **Markdownlint:** `bunx markdownlint --fix docs/`
+*   **Markdownlint:** `bun run markdownlint`
