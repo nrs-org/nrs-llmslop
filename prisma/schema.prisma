@@ -73,8 +73,6 @@ model Impact {
   name         String
   scoreVector  Json
   dah_meta     Json?
-  ir_source_extension String?
-  ir_source_name      String?
   contributions ImpactContribution[]
 }
 
@@ -92,8 +90,6 @@ model Relation {
   id            String   @id
   name          String
   dah_meta      Json?
-  ir_source_extension String?
-  ir_source_name      String?
   references    RelationReference[]
   contributions RelationContribution[]
 }
