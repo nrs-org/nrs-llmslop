@@ -1,23 +1,65 @@
+"use client";
+
 import { Entry, EntryProgress } from "@/generated/prisma";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
+import React from "react";
 
 interface EntryWithProgress extends Entry {
   progress: EntryProgress | null;
 }
 
-interface EntryListPageProps {
-  searchParams: Promise<{ page?: string; pageSize?: string }>;
+interface EntryListApiResponse {
+  entries: EntryWithProgress[];
+  hasNextPage: boolean;
+  hasPreviousPage: boolean;
 }
 
-export default async function EntryListPage({ searchParams }: EntryListPageProps) {
-  const searchParamsResolved = await searchParams;
-  const page = parseInt(searchParamsResolved.page || "1");
-  const pageSize = parseInt(searchParamsResolved.pageSize || "10");
+interface EntryListPageProps {
+  searchParams: { page?: string; pageSize?: string };
+}
 
-  const res = await fetch(`http://localhost:3000/api/entries?page=${page}&pageSize=${pageSize}`, {
-    cache: "no-store",
-  });
-  const entries: EntryWithProgress[] = await res.json();
+export default function EntryListPage({ searchParams }: EntryListPageProps) {
+  const router = useRouter();
+  const page = parseInt(searchParams.page || "1");
+  const pageSize = parseInt(searchParams.pageSize || "10");
+
+  const [apiResponse, setApiResponse] = React.useState<EntryListApiResponse | null>(null);
+  const [loading, setLoading] = React.useState(true);
+  const [error, setError] = React.useState<string | null>(null);
+
+  React.useEffect(() => {
+    async function fetchEntries() {
+      try {
+        setLoading(true);
+        const res = await fetch(`http://localhost:3000/api/entries?page=${page}&pageSize=${pageSize}`);
+        if (!res.ok) {
+          throw new Error(`HTTP error! status: ${res.status}`);
+        }
+        const data: EntryListApiResponse = await res.json();
+        setApiResponse(data);
+      } catch (err: unknown) {
+        const errorMessage = err instanceof Error ? err.message : "An unknown error occurred";
+        setError(errorMessage);
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    fetchEntries();
+  }, [page, pageSize]);
+
+  const handlePageSizeChange = (event: React.ChangeEvent<HTMLSelectElement>) => {
+    const newPageSize = parseInt(event.target.value);
+    router.push(`/entries?page=1&pageSize=${newPageSize}`);
+  };
+
+  if (loading) return <div className="container mx-auto p-4 bg-gray-900 text-gray-100 min-h-screen">Loading...</div>;
+  if (error) return <div className="container mx-auto p-4 bg-gray-900 text-gray-100 min-h-screen">Error: {error}</div>;
+
+  const entries = apiResponse?.entries || [];
+  const hasNextPage = apiResponse?.hasNextPage || false;
+  const hasPreviousPage = apiResponse?.hasPreviousPage || false;
 
   return (
     <div className="container mx-auto p-4 bg-gray-900 text-gray-100 min-h-screen">
@@ -30,7 +72,7 @@ export default async function EntryListPage({ searchParams }: EntryListPageProps
               <th className="py-3 px-6 text-center w-16">Rank</th>
               <th className="py-3 px-6 text-left">Title</th>
               <th className="py-3 px-6 text-center w-24">Score</th>
-              <th className="py-3 px-6 text-center w-40">Progress</th>
+              <th className="py-3 px-6 text-center w-48">Progress</th>
             </tr>
           </thead>
           <tbody className="text-gray-300 text-sm font-light">
@@ -92,19 +134,38 @@ export default async function EntryListPage({ searchParams }: EntryListPageProps
         </table>
       </div>
 
-      <div className="flex justify-between mt-4">
-        <Link
-          href={`/entries?page=${Math.max(1, page - 1)}&pageSize=${pageSize}`}
-          className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600"
-        >
-          Previous
-        </Link>
-        <Link
-          href={`/entries?page=${page + 1}&pageSize=${pageSize}`}
-          className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600"
-        >
-          Next
-        </Link>
+      <div className="flex justify-between items-center mt-4">
+        <div className="flex items-center">
+          <label htmlFor="pageSize" className="mr-2 text-gray-300">Items per page:</label>
+          <select
+            id="pageSize"
+            value={pageSize}
+            onChange={handlePageSizeChange}
+            className="bg-gray-700 border border-gray-600 text-white text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 p-1.5"
+          >
+            <option value="10">10</option>
+            <option value="25">25</option>
+            <option value="50">50</option>
+          </select>
+        </div>
+        <div className="flex space-x-2">
+          {hasPreviousPage && (
+            <Link
+              href={`/entries?page=${Math.max(1, page - 1)}&pageSize=${pageSize}`}
+              className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600"
+            >
+              Previous
+            </Link>
+          )}
+          {hasNextPage && (
+            <Link
+              href={`/entries?page=${page + 1}&pageSize=${pageSize}`}
+              className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600"
+            >
+              Next
+            </Link>
+          )}
+        </div>
       </div>
     </div>
   );

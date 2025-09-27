@@ -15,12 +15,20 @@ import {
 
 const prisma = new PrismaClient();
 
-export const getEntries = (page = 1, pageSize = 10) => {
-  return prisma.entry.findMany({
-    skip: (page - 1) * pageSize,
-    take: pageSize,
+export const getEntries = async (page = 1, pageSize = 10) => {
+  const skip = (page - 1) * pageSize;
+  const entries = await prisma.entry.findMany({
+    skip,
+    take: pageSize + 1, // Fetch one more to check for next page
     include: { progress: true },
   });
+
+  const hasNextPage = entries.length > pageSize;
+  const data = hasNextPage ? entries.slice(0, -1) : entries;
+
+  const hasPreviousPage = page > 1;
+
+  return { entries: data, hasNextPage, hasPreviousPage };
 };
 
 export const getEntryDetails = (id: string) => {

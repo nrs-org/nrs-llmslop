@@ -75,10 +75,10 @@ describe("Database API", () => {
       await db.client.entry.create({ data: { id: `page-entry-${i}`, title: `Page Entry ${i}` } });
     }
 
-    const page1 = await dbApi.getEntries(1, 10);
-    expect(page1.length).toBe(10);
+    const { entries: page1Entries } = await dbApi.getEntries(1, 10);
+    expect(page1Entries.length).toBe(10);
 
-    const page2 = await dbApi.getEntries(2, 10);
-    expect(page2.length).toBe(5);
+    const { entries: page2Entries } = await dbApi.getEntries(2, 10);
+    expect(page2Entries.length).toBe(5);
   });
 });

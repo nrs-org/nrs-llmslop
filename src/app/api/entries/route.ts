@@ -25,8 +25,8 @@ export async function GET(request: NextRequest) {
     const page = parseInt(searchParams.get("page") || "1");
     const pageSize = parseInt(searchParams.get("pageSize") || "10");
 
-    const entries = await dbApi.getEntries(page, pageSize);
-    return NextResponse.json(entries);
+    const { entries, hasNextPage, hasPreviousPage } = await dbApi.getEntries(page, pageSize);
+    return NextResponse.json({ entries, hasNextPage, hasPreviousPage });
   } catch (error: unknown) {
     const errorMessage = error instanceof Error ? error.message : "An unknown error occurred";
     return NextResponse.json({ error: errorMessage }, { status: 500 });
