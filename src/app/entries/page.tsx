@@ -6,12 +6,13 @@ interface EntryWithProgress extends Entry {
 }
 
 interface EntryListPageProps {
-  searchParams: { page?: string; pageSize?: string };
+  searchParams: Promise<{ page?: string; pageSize?: string }>;
 }
 
 export default async function EntryListPage({ searchParams }: EntryListPageProps) {
-  const page = parseInt(searchParams.page || "1");
-  const pageSize = parseInt(searchParams.pageSize || "10");
+  const searchParamsResolved = await searchParams;
+  const page = parseInt(searchParamsResolved.page || "1");
+  const pageSize = parseInt(searchParamsResolved.pageSize || "10");
 
   const res = await fetch(`http://localhost:3000/api/entries?page=${page}&pageSize=${pageSize}`, {
     cache: "no-store",
@@ -27,7 +28,7 @@ export default async function EntryListPage({ searchParams }: EntryListPageProps
           <thead>
             <tr className="bg-gray-700 text-gray-200 uppercase text-sm leading-normal">
               <th className="py-3 px-6 text-center w-16">Rank</th>
-              <th className="py-3 px-6 text-left w-[55%]">Title</th>
+              <th className="py-3 px-6 text-left">Title</th>
               <th className="py-3 px-6 text-center w-24">Score</th>
               <th className="py-3 px-6 text-center w-40">Progress</th>
             </tr>
