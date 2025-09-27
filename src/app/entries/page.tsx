@@ -23,15 +23,15 @@ export default async function EntryListPage({ searchParams }: EntryListPageProps
       <h1 className="text-2xl font-bold mb-4">Entries</h1>
 
       <div className="overflow-x-auto">
-        <table className="min-w-full bg-white border border-gray-300">
+        <table className="min-w-full bg-white border border-gray-300 text-gray-800">
           <thead>
             <tr>
-              <th className="py-2 px-4 border-b">ID</th>
-              <th className="py-2 px-4 border-b">Title</th>
-              <th className="py-2 px-4 border-b">Best Girl</th>
-              <th className="py-2 px-4 border-b">Status</th>
-              <th className="py-2 px-4 border-b">Entry Type</th>
-              <th className="py-2 px-4 border-b">Score</th>
+              <th className="py-2 px-4 border-b bg-gray-100">ID</th>
+              <th className="py-2 px-4 border-b bg-gray-100">Title</th>
+              <th className="py-2 px-4 border-b bg-gray-100">Best Girl</th>
+              <th className="py-2 px-4 border-b bg-gray-100">Status</th>
+              <th className="py-2 px-4 border-b bg-gray-100">Entry Type</th>
+              <th className="py-2 px-4 border-b bg-gray-100">Score</th>
             </tr>
           </thead>
           <tbody>
@@ -39,18 +39,18 @@ export default async function EntryListPage({ searchParams }: EntryListPageProps
               const entryType = entry.dah_meta && typeof entry.dah_meta === 'object' && 'DAH_entry_type' in entry.dah_meta ? entry.dah_meta.DAH_entry_type : 'N/A';
               return (
                 <tr key={entry.id}>
-                  <td className="py-2 px-4 border-b">
+                  <td className="py-2 px-4 border-b text-gray-700">
                     <Link href={`/entries/${entry.id}`}>
                       <span className="text-blue-600 hover:underline">
                         {entry.id}
                       </span>
                     </Link>
                   </td>
-                  <td className="py-2 px-4 border-b">{entry.title}</td>
-                  <td className="py-2 px-4 border-b">{entry.bestGirl || 'N/A'}</td>
-                  <td className="py-2 px-4 border-b">{entry.progress?.status || 'N/A'}</td>
-                  <td className="py-2 px-4 border-b">{entryType as string}</td>
-                  <td className="py-2 px-4 border-b">N/A</td> {/* Placeholder for score */}
+                  <td className="py-2 px-4 border-b text-gray-700">{entry.title}</td>
+                  <td className="py-2 px-4 border-b text-gray-700">{entry.bestGirl || 'N/A'}</td>
+                  <td className="py-2 px-4 border-b text-gray-700">{entry.progress?.status || 'N/A'}</td>
+                  <td className="py-2 px-4 border-b text-gray-700">{entryType as string}</td>
+                  <td className="py-2 px-4 border-b text-gray-700">N/A</td> {/* Placeholder for score */}
                 </tr>
               );
             })}
