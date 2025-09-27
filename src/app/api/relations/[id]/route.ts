@@ -5,13 +5,13 @@ import { z } from "zod";
 // Schema for updating a Relation
 const updateRelationSchema = z.object({
   name: z.string().optional(),
-  dah_meta: z.record(z.string(), z.unknown()).optional(),
+  dah_meta: z.any().optional(),
 });
 
 // GET /api/relations/[id] - Get a single relation by ID
-export async function GET(request: NextRequest, context: { params: { id: string } }) {
+export async function GET(request: NextRequest, context: { params: Promise<{ id: string; }>; }): Promise<NextResponse> {
   try {
-    const { id } = context.params;
+    const { id } = await context.params;
     const relation = await dbApi.getRelation(id);
 
     if (!relation) {
@@ -26,9 +26,9 @@ export async function GET(request: NextRequest, context: { params: { id: string 
 }
 
 // PUT /api/relations/[id] - Update a relation by ID
-export async function PUT(request: NextRequest, context: { params: { id: string } }) {
+export async function PUT(request: NextRequest, context: { params: Promise<{ id: string }> }): Promise<NextResponse> {
   try {
-    const { id } = context.params;
+    const { id } = await context.params;
     const body = await request.json();
     const validatedData = updateRelationSchema.parse(body);
 
@@ -46,9 +46,9 @@ export async function PUT(request: NextRequest, context: { params: { id: string 
 }
 
 // DELETE /api/relations/[id] - Delete a relation by ID
-export async function DELETE(request: NextRequest, context: { params: { id: string } }) {
+export async function DELETE(request: NextRequest, context: { params: Promise<{ id: string }> }): Promise<NextResponse> {
   try {
-    const { id } = context.params;
+    const { id } = await context.params;
     const deletedRelation = await dbApi.deleteRelation(id);
 
     if (!deletedRelation) {

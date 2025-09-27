@@ -1,32 +1,9 @@
-export enum EntryStatus {
-  FINISHED = "FINISHED",
-  IN_PROGRESS = "IN_PROGRESS",
-  ABANDONED = "ABANDONED",
-  PAUSED = "PAUSED",
-  NOT_STARTED = "NOT_STARTED",
-}
-
-export enum VisualType {
-  animated = "animated",
-  rpg3dGame = "rpg3dGame",
-  animatedShort = "animatedShort",
-  animatedMV = "animatedMV",
-  visualNovel = "visualNovel",
-  manga = "manga",
-  animatedGachaCardArt = "animatedGachaCardArt",
-  gachaCardArt = "gachaCardArt",
-  lightNovel = "lightNovel",
-  semiAnimatedMV = "semiAnimatedMV",
-  staticMV = "staticMV",
-  albumArt = "albumArt",
-}
+import { Prisma, EntryStatus } from "@/generated/prisma";
 
 export type ScoreVector = { [key: string]: number };
 export type ScoreMatrix = { [key: string]: { [key: string]: number } };
 
-export interface DAHMeta {
-  [key: string]: unknown;
-}
+export type DAHMeta = Prisma.InputJsonValue;
 
 export interface EntryCreateDTO {
   id: string;

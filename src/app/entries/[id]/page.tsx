@@ -1,4 +1,4 @@
-import { Entry, Impact, Relation, EntryProgress } from "@/generated/prisma";
+import { Entry, Impact, Relation, EntryProgress, ImpactContribution, RelationContribution } from "@/generated/prisma";
 
 interface EntryDetailsPageProps {
   params: { id: string };
@@ -6,8 +6,8 @@ interface EntryDetailsPageProps {
 
 interface EntryWithRelations extends Entry {
   progress: EntryProgress | null;
-  impacts: Array<{ impact: Impact }>;
-  relations: Array<{ relation: Relation }>;
+  impacts: (ImpactContribution & { impact: Impact })[];
+  relations: (RelationContribution & { relation: Relation })[];
   referencedBy: Array<{ relation: Relation }>;
 }
 

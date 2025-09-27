@@ -7,8 +7,8 @@ import { z } from "zod";
 const createImpactSchema = z.object({
   id: z.string(),
   name: z.string(),
-  scoreVector: z.record(z.string(), z.number()),
-  dah_meta: z.record(z.string(), z.unknown()).optional(),
+  scoreVector: z.any(),
+  dah_meta: z.any().optional(),
 });
 
 // GET /api/impacts - Get a paginated list of impacts

@@ -4,7 +4,7 @@ import { z } from "zod";
 
 // Schema for updating NRSContext
 const updateNRSContextSchema = z.object({
-  factorScoreWeights: z.record(z.string(), z.number()).optional(),
+  factorScoreWeights: z.any().optional(),
 });
 
 // GET /api/nrs-context - Get the NRSContext instance

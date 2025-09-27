@@ -6,14 +6,14 @@ import { z } from "zod";
 const updateEntrySchema = z.object({
   title: z.string().optional(),
   bestGirl: z.string().optional(),
-  additionalSources: z.record(z.string(), z.unknown()).optional(),
-  dah_meta: z.record(z.string(), z.unknown()).optional(),
+  additionalSources: z.any().optional(),
+  dah_meta: z.any().optional(),
 });
 
 // GET /api/entries/[id] - Get a single entry by ID
-export async function GET(request: NextRequest, context: { params: { id: string } }) {
+export async function GET(request: NextRequest, context: { params: Promise<{ id: string; }>; }): Promise<NextResponse> {
   try {
-    const { id } = context.params;
+    const { id } = await context.params;
     const entry = await dbApi.getEntryDetails(id);
 
     if (!entry) {
@@ -28,9 +28,9 @@ export async function GET(request: NextRequest, context: { params: { id: string 
 }
 
 // PUT /api/entries/[id] - Update an entry by ID
-export async function PUT(request: NextRequest, context: { params: { id: string } }) {
+export async function PUT(request: NextRequest, context: { params: Promise<{ id: string }> }) {
   try {
-    const { id } = context.params;
+    const { id } = await context.params;
     const body = await request.json();
     const validatedData = updateEntrySchema.parse(body);
 
@@ -48,9 +48,9 @@ export async function PUT(request: NextRequest, context: { params: { id: string 
 }
 
 // DELETE /api/entries/[id] - Delete an entry by ID
-export async function DELETE(request: NextRequest, context: { params: { id: string } }) {
+export async function DELETE(request: NextRequest, context: { params: Promise<{ id: string }> }) {
   try {
-    const { id } = context.params;
+    const { id } = await context.params;
     const deletedEntry = await dbApi.deleteEntry(id);
 
     if (!deletedEntry) {

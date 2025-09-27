@@ -1,6 +1,7 @@
 import { NextResponse, NextRequest } from "next/server";
 import * as dbApi from "@/lib/db_api";
-import { EntryCreateDTO, EntryProgressCreateDTO, EntryStatus } from "@/lib/db_types";
+import { EntryCreateDTO, EntryProgressCreateDTO } from "@/lib/db_types";
+import { EntryStatus } from "@/generated/prisma";
 import { z } from "zod";
 
 // Schema for creating an Entry
@@ -8,8 +9,8 @@ const createEntrySchema = z.object({
   id: z.string(),
   title: z.string(),
   bestGirl: z.string().optional(),
-  additionalSources: z.record(z.string(), z.unknown()).optional(),
-  dah_meta: z.record(z.string(), z.unknown()).optional(),
+  additionalSources: z.any().optional(),
+  dah_meta: z.any().optional(),
   progress: z.object({
     status: z.nativeEnum(EntryStatus),
     length_seconds: z.number().optional(),

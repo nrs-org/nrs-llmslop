@@ -5,14 +5,14 @@ import { z } from "zod";
 // Schema for updating an Impact
 const updateImpactSchema = z.object({
   name: z.string().optional(),
-  scoreVector: z.record(z.string(), z.number()).optional(),
-  dah_meta: z.record(z.string(), z.unknown()).optional(),
+  scoreVector: z.any().optional(),
+  dah_meta: z.any().optional(),
 });
 
 // GET /api/impacts/[id] - Get a single impact by ID
-export async function GET(request: NextRequest, context: { params: { id: string } }) {
+export async function GET(request: NextRequest, context: { params: Promise<{ id: string; }>; }): Promise<NextResponse> {
   try {
-    const { id } = context.params;
+    const { id } = await context.params;
     const impact = await dbApi.getImpact(id);
 
     if (!impact) {
@@ -27,9 +27,9 @@ export async function GET(request: NextRequest, context: { params: { id: string 
 }
 
 // PUT /api/impacts/[id] - Update an impact by ID
-export async function PUT(request: NextRequest, context: { params: { id: string } }) {
+export async function PUT(request: NextRequest, context: { params: Promise<{ id: string }> }): Promise<NextResponse> {
   try {
-    const { id } = context.params;
+    const { id } = await context.params;
     const body = await request.json();
     const validatedData = updateImpactSchema.parse(body);
 
@@ -47,9 +47,9 @@ export async function PUT(request: NextRequest, context: { params: { id: string 
 }
 
 // DELETE /api/impacts/[id] - Delete an impact by ID
-export async function DELETE(request: NextRequest, context: { params: { id: string } }) {
+export async function DELETE(request: NextRequest, context: { params: Promise<{ id: string }> }): Promise<NextResponse> {
   try {
-    const { id } = context.params;
+    const { id } = await context.params;
     const deletedImpact = await dbApi.deleteImpact(id);
 
     if (!deletedImpact) {

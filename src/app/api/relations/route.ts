@@ -7,7 +7,7 @@ import { z } from "zod";
 const createRelationSchema = z.object({
   id: z.string(),
   name: z.string(),
-  dah_meta: z.record(z.string(), z.unknown()).optional(),
+  dah_meta: z.any().optional(),
 });
 
 // GET /api/relations - Get a paginated list of relations

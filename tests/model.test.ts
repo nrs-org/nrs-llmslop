@@ -1,13 +1,12 @@
 import { describe, it, expect, beforeAll, afterAll, beforeEach } from "bun:test";
 import { TestDB } from "./lib/db";
 import * as dbApi from "../src/lib/db_api";
-import { GlobalContext } from "../src/generated/prisma";
+import { EntryStatus, GlobalContext } from "@/generated/prisma";
 import {
   EntryCreateDTO,
   EntryProgressCreateDTO,
   ImpactCreateDTO,
   ImpactContributionCreateDTO,
-  EntryStatus,
 } from "../src/lib/db_types";
 
 const db = new TestDB();
@@ -60,8 +59,7 @@ describe("Database API", () => {
   });
 
   it("should add an impact to an entry", async () => {
-    const entryData: EntryCreateDTO = { id: "test-entry-3", title: "Test Entry 3" };
-    await db.client.entry.create({ data: entryData });
+    await db.client.entry.create({ data: { id: "test-entry-3", title: "Test Entry 3" } });
 
     const impactData: ImpactCreateDTO = { id: "test-impact-1", name: "Test Impact 1", scoreVector: { a: 1 } };
     const contributionData: ImpactContributionCreateDTO = { contributingWeight: { a: { b: 1 } } };
@@ -74,8 +72,7 @@ describe("Database API", () => {
 
   it("should get a paginated list of entries", async () => {
     for (let i = 0; i < 15; i++) {
-      const entryData: EntryCreateDTO = { id: `page-entry-${i}`, title: `Page Entry ${i}` };
-      await db.client.entry.create({ data: entryData });
+      await db.client.entry.create({ data: { id: `page-entry-${i}`, title: `Page Entry ${i}` } });
     }
 
     const page1 = await dbApi.getEntries(1, 10);

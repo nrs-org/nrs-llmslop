@@ -1,4 +1,4 @@
-import { PrismaClient, GlobalContext } from "../generated/prisma";
+import { PrismaClient, GlobalContext } from "@/generated/prisma";
 import {
   EntryCreateDTO,
   EntryProgressCreateDTO,
