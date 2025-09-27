@@ -7,6 +7,7 @@ import {
   RelationCreateDTO,
   RelationContributionCreateDTO,
   RelationReferenceCreateDTO,
+  EntryUpdateDTO,
 } from "./db_types";
 
 const prisma = new PrismaClient();
@@ -42,6 +43,19 @@ export const createEntryWithProgress = (
         create: progressData,
       },
     },
+  });
+};
+
+export const updateEntry = (id: string, data: EntryUpdateDTO) => {
+  return prisma.entry.update({
+    where: { id },
+    data,
+  });
+};
+
+export const deleteEntry = (id: string) => {
+  return prisma.entry.delete({
+    where: { id },
   });
 };
 

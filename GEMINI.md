@@ -16,7 +16,7 @@ To build and run this project, you can use the following commands:
 
 *   **Styling:** The project uses Tailwind CSS for styling. You can find the configuration in `postcss.config.mjs` and the main CSS file in `src/app/globals.css`.
 *   **Database:** The project uses Prisma for database management. The schema is defined in `prisma/schema.prisma`. The database models include `Entry`, `Impact`, `Relation`, `NRSContext`, and their associated join tables. A high-level API for database interactions is provided in `src/lib/db_api.ts`, with corresponding data structures defined in `src/lib/db_types.ts`.
-*   **Linting:** The project uses ESLint for linting. The configuration is in `eslint.config.mjs`.
+*   **Linting:** The project uses ESLint for linting, which now includes typechecking. The configuration is in `eslint.config.mjs`.
 *   **Components:** The main application component is `src/app/page.tsx`, and the layout is defined in `src/app/layout.tsx`.
 *   **Dependencies:** The project uses `bun` as the package manager. The dependencies are listed in `package.json`.
 *   **Testing:** Database tests are located in `tests/model.test.ts` and utilize a `TestDB` helper class (`tests/lib/db.ts`). The project is transitioning from `vitest` to `bun test` for running tests.
@@ -28,5 +28,5 @@ To build and run this project, you can use the following commands:
 Before committing any changes, ensure the following checks pass:
 
 *   **Run Tests:** `bun test`
-*   **Typecheck:** `bunx tsc --noEmit`
+*   **Linting (including Typecheck):** `bun run lint`
 *   **Markdownlint:** `bun run markdownlint`

@@ -25,12 +25,19 @@ export type ScoreVector = { [key: string]: number };
 export type ScoreMatrix = { [key: string]: { [key: string]: number } };
 
 export interface DAHMeta {
-  [key: string]: any;
+  [key: string]: unknown;
 }
 
 export interface EntryCreateDTO {
   id: string;
   title: string;
+  bestGirl?: string;
+  additionalSources?: DAHMeta;
+  dah_meta?: DAHMeta;
+}
+
+export interface EntryUpdateDTO {
+  title?: string;
   bestGirl?: string;
   additionalSources?: DAHMeta;
   dah_meta?: DAHMeta;

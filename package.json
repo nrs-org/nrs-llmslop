@@ -6,8 +6,7 @@
     "dev": "next dev --turbopack",
     "build": "next build --turbopack",
     "start": "next start",
-    "lint": "eslint",
-    "typecheck:test": "bunx tsc --noEmit -p tests/tsconfig.json",
+    "lint": "eslint .",
     "markdownlint": "bunx markdownlint --fix docs/ --ignore docs/nrs/ --ignore docs/nrs-lib-ts/"
   },
   "dependencies": {
