@@ -56,10 +56,25 @@ export interface ImpactCreateDTO {
   dah_meta?: DAHMeta;
 }
 
+export interface ImpactUpdateDTO {
+  name?: string;
+  scoreVector?: ScoreVector;
+  dah_meta?: DAHMeta;
+}
+
 export interface RelationCreateDTO {
   id: string;
   name: string;
   dah_meta?: DAHMeta;
+}
+
+export interface RelationUpdateDTO {
+  name?: string;
+  dah_meta?: DAHMeta;
+}
+
+export interface NRSContextUpdateDTO {
+  factorScoreWeights?: ScoreVector;
 }
 
 export interface ImpactContributionCreateDTO {

@@ -8,6 +8,9 @@ import {
   RelationContributionCreateDTO,
   RelationReferenceCreateDTO,
   EntryUpdateDTO,
+  ImpactUpdateDTO,
+  RelationUpdateDTO,
+  NRSContextUpdateDTO,
 } from "./db_types";
 
 const prisma = new PrismaClient();
@@ -69,6 +72,35 @@ export const updateEntryProgress = (
   });
 };
 
+// Impact CRUD
+export const getImpacts = (page = 1, pageSize = 10) => {
+  return prisma.impact.findMany({
+    skip: (page - 1) * pageSize,
+    take: pageSize,
+  });
+};
+
+export const createImpact = (data: ImpactCreateDTO) => {
+  return prisma.impact.create({ data });
+};
+
+export const getImpact = (id: string) => {
+  return prisma.impact.findUnique({ where: { id } });
+};
+
+export const updateImpact = (id: string, data: ImpactUpdateDTO) => {
+  return prisma.impact.update({
+    where: { id },
+    data,
+  });
+};
+
+export const deleteImpact = (id: string) => {
+  return prisma.impact.delete({
+    where: { id },
+  });
+};
+
 export const addImpactToEntry = (
   entryId: string,
   impactData: ImpactCreateDTO,
@@ -84,6 +116,35 @@ export const addImpactToEntry = (
         },
       },
     },
+  });
+};
+
+// Relation CRUD
+export const getRelations = (page = 1, pageSize = 10) => {
+  return prisma.relation.findMany({
+    skip: (page - 1) * pageSize,
+    take: pageSize,
+  });
+};
+
+export const createRelation = (data: RelationCreateDTO) => {
+  return prisma.relation.create({ data });
+};
+
+export const getRelation = (id: string) => {
+  return prisma.relation.findUnique({ where: { id } });
+};
+
+export const updateRelation = (id: string, data: RelationUpdateDTO) => {
+  return prisma.relation.update({
+    where: { id },
+    data,
+  });
+};
+
+export const deleteRelation = (id: string) => {
+  return prisma.relation.delete({
+    where: { id },
   });
 };
 
@@ -124,4 +185,11 @@ export const getFullNRSData = () => {
 
 export const getNRSContext = () => {
   return prisma.nRSContext.findUnique({ where: { id: GlobalContext.global } });
+};
+
+export const updateNRSContext = (data: NRSContextUpdateDTO) => {
+  return prisma.nRSContext.update({
+    where: { id: GlobalContext.global },
+    data,
+  });
 };
