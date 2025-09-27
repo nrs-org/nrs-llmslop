@@ -21,24 +21,43 @@ export default async function EntryListPage({ searchParams }: EntryListPageProps
   return (
     <div className="container mx-auto p-4">
       <h1 className="text-2xl font-bold mb-4">Entries</h1>
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-        {entries.map((entry) => (
-          <div key={entry.id} className="border p-4 rounded-lg shadow-sm">
-            <Link href={`/entries/${entry.id}`}>
-              <h2 className="text-xl font-semibold text-blue-600 hover:underline">
-                {entry.title}
-              </h2>
-            </Link>
-            {entry.bestGirl && <p>Best Girl: {entry.bestGirl}</p>}
-            {entry.progress && (
-              <p>Status: {entry.progress.status}</p>
-            )}
-            {entry.additionalSources && (
-              <p>Sources: {JSON.stringify(entry.additionalSources)}</p>
-            )}
-          </div>
-        ))}
+
+      <div className="overflow-x-auto">
+        <table className="min-w-full bg-white border border-gray-300">
+          <thead>
+            <tr>
+              <th className="py-2 px-4 border-b">ID</th>
+              <th className="py-2 px-4 border-b">Title</th>
+              <th className="py-2 px-4 border-b">Best Girl</th>
+              <th className="py-2 px-4 border-b">Status</th>
+              <th className="py-2 px-4 border-b">Entry Type</th>
+              <th className="py-2 px-4 border-b">Score</th>
+            </tr>
+          </thead>
+          <tbody>
+            {entries.map((entry) => {
+              const entryType = entry.dah_meta && typeof entry.dah_meta === 'object' && 'DAH_entry_type' in entry.dah_meta ? entry.dah_meta.DAH_entry_type : 'N/A';
+              return (
+                <tr key={entry.id}>
+                  <td className="py-2 px-4 border-b">
+                    <Link href={`/entries/${entry.id}`}>
+                      <span className="text-blue-600 hover:underline">
+                        {entry.id}
+                      </span>
+                    </Link>
+                  </td>
+                  <td className="py-2 px-4 border-b">{entry.title}</td>
+                  <td className="py-2 px-4 border-b">{entry.bestGirl || 'N/A'}</td>
+                  <td className="py-2 px-4 border-b">{entry.progress?.status || 'N/A'}</td>
+                  <td className="py-2 px-4 border-b">{entryType as string}</td>
+                  <td className="py-2 px-4 border-b">N/A</td> {/* Placeholder for score */}
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
       </div>
+
       <div className="flex justify-between mt-4">
         <Link
           href={`/entries?page=${Math.max(1, page - 1)}&pageSize=${pageSize}`}
