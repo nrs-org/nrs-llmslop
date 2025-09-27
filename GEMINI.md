@@ -10,6 +10,8 @@ To build and run this project, you can use the following commands:
 *   **Build:** `bun build`
 *   **Start:** `bun start`
 *   **Test:** `bun test` (using Bun's native test runner)
+*   **Typecheck:** `bun run typecheck` (to check TypeScript for errors)
+*   **Linting:** `bun run lint` (to check and fix code style and potential issues)
 *   **Markdownlint:** `bun run markdownlint` (to check and fix Markdown files)
 
 ## Development Conventions
@@ -28,5 +30,6 @@ To build and run this project, you can use the following commands:
 Before committing any changes, ensure the following checks pass:
 
 *   **Run Tests:** `bun test`
-*   **Linting (including Typecheck and Fix):** `bun run lint`
+*   **Typecheck:** `bun run typecheck`
+*   **Linting (with Fix):** `bun run lint`
 *   **Markdownlint:** `bun run markdownlint`

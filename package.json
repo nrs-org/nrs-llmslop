@@ -7,6 +7,7 @@
     "build": "next build --turbopack",
     "start": "next start",
     "lint": "eslint . --fix",
+    "typecheck": "bunx tsc --noEmit",
     "markdownlint": "bunx markdownlint --fix docs/ --ignore docs/nrs/ --ignore docs/nrs-lib-ts/"
   },
   "dependencies": {
