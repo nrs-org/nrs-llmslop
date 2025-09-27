@@ -4,6 +4,14 @@ This project is an AI-powered Next.js application, developed with the assistance
 
 This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
 
+## Why AI? (human written)
+
+Writing a SASS app is mostly filling boilerplate that is 100x more boring than filling Vulkan structs. This is also an experiment to see how (free/cheap) LLM can program a boring React app.
+
+Even though this is mostly AI-written, I still review the code and maintain the quality pretty strictly.
+
+Also, in the future, all maintaining work will probably be done by me.
+
 ## Getting Started
 
 First, run the development server:
