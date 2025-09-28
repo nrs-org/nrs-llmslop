@@ -1,6 +1,10 @@
 import { NextResponse, NextRequest } from "next/server";
-import * as dbApi from "@/lib/db_api";
+import { DbApi } from "@/lib/db_api";
 import { z } from "zod";
+import { PrismaClient } from "@/generated/prisma";
+
+const prisma = new PrismaClient();
+const dbApi = new DbApi(prisma);
 
 // Schema for updating NRSContext
 const updateNRSContextSchema = z.object({

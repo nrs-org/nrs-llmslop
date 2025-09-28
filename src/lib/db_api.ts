@@ -13,191 +13,199 @@ import {
   NRSContextUpdateDTO,
 } from "./db_types";
 
-const prisma = new PrismaClient();
+export class DbApi {
+  private prisma: PrismaClient;
 
-export const getEntries = async (page = 1, pageSize = 10) => {
-  const skip = (page - 1) * pageSize;
-  const entries = await prisma.entry.findMany({
-    skip,
-    take: pageSize + 1, // Fetch one more to check for next page
-    include: { progress: true },
-  });
+  constructor(prismaClient: PrismaClient) {
+    this.prisma = prismaClient;
+  }
 
-  const hasNextPage = entries.length > pageSize;
-  const data = hasNextPage ? entries.slice(0, -1) : entries;
+  getEntries = async (page = 1, pageSize = 10) => {
+    const skip = (page - 1) * pageSize;
+    const entries = await this.prisma.entry.findMany({
+      skip,
+      take: pageSize + 1, // Fetch one more to check for next page
+      include: { progress: true },
+    });
 
-  const hasPreviousPage = page > 1;
+    const hasNextPage = entries.length > pageSize;
+    const data = hasNextPage ? entries.slice(0, -1) : entries;
 
-  return { entries: data, hasNextPage, hasPreviousPage };
-};
+    const hasPreviousPage = page > 1;
 
-export const getEntryDetails = (id: string) => {
-  return prisma.entry.findUnique({
-    where: { id },
-    include: {
-      progress: true,
-      impacts: { include: { impact: true } },
-      relations: { include: { relation: true } },
-      referencedBy: { include: { relation: true } },
-    },
-  });
-};
+    return { entries: data, hasNextPage, hasPreviousPage };
+  };
 
-export const createEntryWithProgress = (
-  entryData: EntryCreateDTO,
-  progressData: EntryProgressCreateDTO
-) => {
-  return prisma.entry.create({
-    data: {
-      ...entryData,
-      progress: {
-        create: progressData,
+  getEntryDetails = (id: string) => {
+    return this.prisma.entry.findUnique({
+      where: { id },
+      include: {
+        progress: true,
+        impacts: { include: { impact: true } },
+        relations: { include: { relation: true } },
+        referencedBy: { include: { relation: true } },
       },
-    },
-  });
-};
+    });
+  };
 
-export const updateEntry = (id: string, data: EntryUpdateDTO) => {
-  return prisma.entry.update({
-    where: { id },
-    data,
-  });
-};
-
-export const deleteEntry = (id: string) => {
-  return prisma.entry.delete({
-    where: { id },
-  });
-};
-
-export const updateEntryProgress = (
-  id: string,
-  progressData: Partial<EntryProgressCreateDTO>
-) => {
-  return prisma.entryProgress.update({
-    where: { id },
-    data: progressData,
-  });
-};
-
-// Impact CRUD
-export const getImpacts = (page = 1, pageSize = 10) => {
-  return prisma.impact.findMany({
-    skip: (page - 1) * pageSize,
-    take: pageSize,
-  });
-};
-
-export const createImpact = (data: ImpactCreateDTO) => {
-  return prisma.impact.create({ data });
-};
-
-export const getImpact = (id: string) => {
-  return prisma.impact.findUnique({ where: { id } });
-};
-
-export const updateImpact = (id: string, data: ImpactUpdateDTO) => {
-  return prisma.impact.update({
-    where: { id },
-    data,
-  });
-};
-
-export const deleteImpact = (id: string) => {
-  return prisma.impact.delete({
-    where: { id },
-  });
-};
-
-export const addImpactToEntry = (
-  entryId: string,
-  impactData: ImpactCreateDTO,
-  contributionData: ImpactContributionCreateDTO
-) => {
-  return prisma.impact.create({
-    data: {
-      ...impactData,
-      contributions: {
-        create: {
-          entry: { connect: { id: entryId } },
-          ...contributionData,
+  createEntryWithProgress = (
+    entryData: EntryCreateDTO,
+    progressData: EntryProgressCreateDTO
+  ) => {
+    return this.prisma.entry.create({
+      data: {
+        ...entryData,
+        progress: {
+          create: progressData,
         },
       },
-    },
-  });
-};
+    });
+  };
 
-// Relation CRUD
-export const getRelations = (page = 1, pageSize = 10) => {
-  return prisma.relation.findMany({
-    skip: (page - 1) * pageSize,
-    take: pageSize,
-  });
-};
+  updateEntry = (id: string, data: EntryUpdateDTO) => {
+    return this.prisma.entry.update({
+      where: { id },
+      data,
+    });
+  };
 
-export const createRelation = (data: RelationCreateDTO) => {
-  return prisma.relation.create({ data });
-};
+  deleteEntry = (id: string) => {
+    return this.prisma.entry.delete({
+      where: { id },
+    });
+  };
 
-export const getRelation = (id: string) => {
-  return prisma.relation.findUnique({ where: { id } });
-};
+  updateEntryProgress = (
+    id: string,
+    progressData: Partial<EntryProgressCreateDTO>
+  ) => {
+    return this.prisma.entryProgress.update({
+      where: { id },
+      data: progressData,
+    });
+  };
 
-export const updateRelation = (id: string, data: RelationUpdateDTO) => {
-  return prisma.relation.update({
-    where: { id },
-    data,
-  });
-};
+  // Impact CRUD
+  getImpacts = (page = 1, pageSize = 10) => {
+    return this.prisma.impact.findMany({
+      skip: (page - 1) * pageSize,
+      take: pageSize,
+    });
+  };
 
-export const deleteRelation = (id: string) => {
-  return prisma.relation.delete({
-    where: { id },
-  });
-};
+  createImpact = (data: ImpactCreateDTO) => {
+    return this.prisma.impact.create({ data });
+  };
 
-export const addRelationToEntry = (
-  entryId: string,
-  relationData: RelationCreateDTO,
-  contributionData: RelationContributionCreateDTO,
-  referenceData: RelationReferenceCreateDTO
-) => {
-  return prisma.relation.create({
-    data: {
-      ...relationData,
-      contributions: {
-        create: {
-          entry: { connect: { id: entryId } },
-          ...contributionData,
+  getImpact = (id: string) => {
+    return this.prisma.impact.findUnique({ where: { id } });
+  };
+
+  updateImpact = (id: string, data: ImpactUpdateDTO) => {
+    return this.prisma.impact.update({
+      where: { id },
+      data,
+    });
+  };
+
+  deleteImpact = (id: string) => {
+    return this.prisma.impact.delete({
+      where: { id },
+    });
+  };
+
+  addImpactToEntry = (
+    entryId: string,
+    impactData: ImpactCreateDTO,
+    contributionData: ImpactContributionCreateDTO
+  ) => {
+    return this.prisma.impact.create({
+      data: {
+        ...impactData,
+        contributions: {
+          create: {
+            entry: { connect: { id: entryId } },
+            ...contributionData,
+          },
         },
       },
-      references: {
-        create: {
-          entry: { connect: { id: referenceData.entryId } },
-          transformMatrix: referenceData.transformMatrix,
+    });
+  };
+
+  // Relation CRUD
+  getRelations = (page = 1, pageSize = 10) => {
+    return this.prisma.relation.findMany({
+      skip: (page - 1) * pageSize,
+      take: pageSize,
+    });
+  };
+
+  createRelation = (data: RelationCreateDTO) => {
+    return this.prisma.relation.create({ data });
+  };
+
+  getRelation = (id: string) => {
+    return this.prisma.relation.findUnique({ where: { id } });
+  };
+
+  updateRelation = (id: string, data: RelationUpdateDTO) => {
+    return this.prisma.relation.update({
+      where: { id },
+      data,
+    });
+  };
+
+  deleteRelation = (id: string) => {
+    return this.prisma.relation.delete({
+      where: { id },
+    });
+  };
+
+  addRelationToEntry = (
+    entryId: string,
+    relationData: RelationCreateDTO,
+    contributionData: RelationContributionCreateDTO,
+    referenceData: RelationReferenceCreateDTO
+  ) => {
+    return this.prisma.relation.create({
+      data: {
+        ...relationData,
+        contributions: {
+          create: {
+            entry: { connect: { id: entryId } },
+            ...contributionData,
+          },
+        },
+        references: {
+          create: {
+            entry: { connect: { id: referenceData.entryId } },
+            transformMatrix: referenceData.transformMatrix,
+          },
         },
       },
-    },
-  });
-};
+    });
+  };
 
-export const getFullNRSData = () => {
-  return prisma.entry.findMany({
-    include: {
-      impacts: { include: { impact: true } },
-      relations: { include: { relation: true } },
-      referencedBy: { include: { relation: true } },
-    },
-  });
-};
+  getFullNRSData = () => {
+    return this.prisma.entry.findMany({
+      include: {
+        impacts: { include: { impact: true } },
+        relations: { include: { relation: true } },
+        referencedBy: { include: { relation: true } },
+      },
+    });
+  };
 
-export const getNRSContext = () => {
-  return prisma.nRSContext.findUnique({ where: { id: GlobalContext.global } });
-};
+  getNRSContext = () => {
+    return this.prisma.nRSContext.findUnique({ where: { id: GlobalContext.global } });
+  };
 
-export const updateNRSContext = (data: NRSContextUpdateDTO) => {
-  return prisma.nRSContext.update({
-    where: { id: GlobalContext.global },
-    data,
-  });
-};
+  updateNRSContext = (data: NRSContextUpdateDTO) => {
+    return this.prisma.nRSContext.update({
+      where: { id: GlobalContext.global },
+      data,
+    });
+  };
+}
+
+export const dbApi = new DbApi(new PrismaClient());

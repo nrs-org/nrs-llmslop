@@ -1,8 +1,12 @@
 import { NextResponse, NextRequest } from "next/server";
-import * as dbApi from "@/lib/db_api";
+import { DbApi } from "@/lib/db_api";
 import { EntryCreateDTO, EntryProgressCreateDTO } from "@/lib/db_types";
 import { EntryStatus } from "@/generated/prisma";
 import { z } from "zod";
+import { PrismaClient } from "@/generated/prisma";
+
+const prisma = new PrismaClient();
+const dbApi = new DbApi(prisma);
 
 // Schema for creating an Entry
 const createEntrySchema = z.object({

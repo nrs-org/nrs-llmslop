@@ -1,6 +1,10 @@
 import { NextResponse, NextRequest } from "next/server";
-import * as dbApi from "@/lib/db_api";
+import { DbApi } from "@/lib/db_api";
 import { z } from "zod";
+import { PrismaClient } from "@/generated/prisma";
+
+const prisma = new PrismaClient();
+const dbApi = new DbApi(prisma);
 
 // Schema for updating an Entry
 const updateEntrySchema = z.object({
@@ -28,7 +32,7 @@ export async function GET(request: NextRequest, context: { params: Promise<{ id:
 }
 
 // PUT /api/entries/[id] - Update an entry by ID
-export async function PUT(request: NextRequest, context: { params: Promise<{ id: string }> }) {
+export async function PUT(request: NextRequest, context: { params: Promise<{ id: string }> }): Promise<NextResponse> {
   try {
     const { id } = await context.params;
     const body = await request.json();
@@ -48,7 +52,7 @@ export async function PUT(request: NextRequest, context: { params: Promise<{ id:
 }
 
 // DELETE /api/entries/[id] - Delete an entry by ID
-export async function DELETE(request: NextRequest, context: { params: Promise<{ id: string }> }) {
+export async function DELETE(request: NextRequest, context: { params: Promise<{ id: string }> }): Promise<NextResponse> {
   try {
     const { id } = await context.params;
     const deletedEntry = await dbApi.deleteEntry(id);
