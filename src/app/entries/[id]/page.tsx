@@ -43,7 +43,7 @@ export default async function EntryDetailsPage({ params }: EntryDetailsPageProps
       {entry.additionalSources && (
         <div className="mt-4 p-4 border rounded-lg shadow-sm">
           <h2 className="text-xl font-semibold">Additional Sources</h2>
-          <pre className="bg-gray-100 p-2 rounded-md overflow-auto">
+          <pre className="bg-gray-100 dark:bg-neutral-900 p-2 rounded-md overflow-auto">
             {JSON.stringify(entry.additionalSources, null, 2)}
           </pre>
         </div>
@@ -52,7 +52,7 @@ export default async function EntryDetailsPage({ params }: EntryDetailsPageProps
       {entry.dah_meta && (
         <div className="mt-4 p-4 border rounded-lg shadow-sm">
           <h2 className="text-xl font-semibold">DAH Meta</h2>
-          <pre className="bg-gray-100 p-2 rounded-md overflow-auto">
+          <pre className="bg-gray-100 dark:bg-neutral-900 p-2 rounded-md overflow-auto">
             {JSON.stringify(entry.dah_meta, null, 2)}
           </pre>
         </div>

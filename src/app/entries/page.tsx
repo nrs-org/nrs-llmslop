@@ -87,7 +87,7 @@ export default function EntryListPage({ searchParams }: EntryListPageProps) {
         </CardHeader>
         <CardContent className="flex-1 flex flex-col">
           <div className="flex flex-col flex-1 overflow-x-auto">
-            <Table className="mx-auto" containerClassName="flex flex-1">
+            <Table className="mx-auto h-full" containerClassName="flex flex-1">
               <TableHeader>
                 <TableRow>
                   <TableHead className="text-center w-16">Rank</TableHead>

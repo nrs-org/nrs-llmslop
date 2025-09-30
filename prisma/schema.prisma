@@ -10,8 +10,9 @@ generator client {
 }
 
 datasource db {
-  provider = "postgresql"
-  url      = env("DATABASE_URL")
+  provider          = "postgresql"
+  url               = env("DATABASE_URL")
+  shadowDatabaseUrl = env("SHADOW_DATABASE_URL")
 }
 
 enum GlobalContext {
@@ -23,9 +24,23 @@ model NRSContext {
   factorScoreWeights Json
 }
 
+enum EntryType {
+  Anime
+  Manga
+  LightNovel
+  VisualNovel
+  MusicAlbum
+  MusicArtist
+  MusicTrack
+  Franchise
+  Game
+  Other
+}
+
 model Entry {
   id        String   @id
   title     String
+  entryType EntryType
   bestGirl  String?
   progress  EntryProgress?
   additionalSources Json?
