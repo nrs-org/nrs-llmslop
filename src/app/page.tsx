@@ -4,10 +4,10 @@ import Link from 'next/link';
 
 export default function Home() {
   return (
-    <div className="flex items-center justify-center min-h-[calc(100vh-64px)]">
+    <div className="flex items-center justify-center mx-auto">
       <Card className="w-[420px]">
         <CardHeader className="text-center">
-          <CardTitle className="text-lg">NRS LLMSLOP</CardTitle>
+          <CardTitle className="text-lg lowercase">nrs-<span className="italic">llmslop</span></CardTitle>
           <CardDescription>A web app for the New Rating System.</CardDescription>
         </CardHeader>
         <CardContent className="grid gap-4">

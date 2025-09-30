@@ -1,10 +1,9 @@
 import { NextResponse, NextRequest } from "next/server";
-import { DbApi } from "@/lib/db_api";
+// ...existing code...
 import { z } from "zod";
 import { PrismaClient } from "@/generated/prisma";
 
 const prisma = new PrismaClient();
-const dbApi = new DbApi(prisma);
 
 // Schema for updating an Entry
 const updateEntrySchema = z.object({
@@ -18,7 +17,10 @@ const updateEntrySchema = z.object({
 export async function GET(request: NextRequest, context: { params: Promise<{ id: string; }>; }): Promise<NextResponse> {
   try {
     const { id } = await context.params;
-    const entry = await dbApi.getEntryDetails(id);
+    const entry = await prisma.entry.findUnique({
+      where: { id },
+      include: { progress: true },
+    });
 
     if (!entry) {
       return NextResponse.json({ error: "Entry not found" }, { status: 404 });
@@ -38,15 +40,16 @@ export async function PUT(request: NextRequest, context: { params: Promise<{ id:
     const body = await request.json();
     const validatedData = updateEntrySchema.parse(body);
 
-    const updatedEntry = await dbApi.updateEntry(id, validatedData);
-
-    if (!updatedEntry) {
-      return NextResponse.json({ error: "Entry not found" }, { status: 404 });
-    }
+    const updatedEntry = await prisma.entry.update({
+      where: { id },
+      data: validatedData,
+      include: { progress: true },
+    });
 
     return NextResponse.json(updatedEntry);
   } catch (error: unknown) {
     const errorMessage = error instanceof Error ? error.message : "An unknown error occurred";
+    // Prisma throws if not found
     return NextResponse.json({ error: errorMessage }, { status: 400 });
   }
 }
@@ -55,15 +58,11 @@ export async function PUT(request: NextRequest, context: { params: Promise<{ id:
 export async function DELETE(request: NextRequest, context: { params: Promise<{ id: string }> }): Promise<NextResponse> {
   try {
     const { id } = await context.params;
-    const deletedEntry = await dbApi.deleteEntry(id);
-
-    if (!deletedEntry) {
-      return NextResponse.json({ error: "Entry not found" }, { status: 404 });
-    }
-
+    await prisma.entry.delete({ where: { id } });
     return NextResponse.json({ message: "Entry deleted successfully" });
   } catch (error: unknown) {
     const errorMessage = error instanceof Error ? error.message : "An unknown error occurred";
-    return NextResponse.json({ error: errorMessage }, { status: 500 });
+    // Prisma throws if not found
+    return NextResponse.json({ error: errorMessage }, { status: 404 });
   }
 }

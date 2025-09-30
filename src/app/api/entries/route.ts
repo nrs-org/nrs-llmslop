@@ -1,12 +1,10 @@
 import { NextResponse, NextRequest } from "next/server";
-import { DbApi } from "@/lib/db_api";
 import { EntryCreateDTO, EntryProgressCreateDTO } from "@/lib/db_types";
 import { EntryStatus } from "@/generated/prisma";
 import { z } from "zod";
 import { PrismaClient } from "@/generated/prisma";
 
 const prisma = new PrismaClient();
-const dbApi = new DbApi(prisma);
 
 // Schema for creating an Entry
 const createEntrySchema = z.object({
@@ -29,7 +27,18 @@ export async function GET(request: NextRequest) {
     const page = parseInt(searchParams.get("page") || "1");
     const pageSize = parseInt(searchParams.get("pageSize") || "10");
 
-    const { entries, hasNextPage, hasPreviousPage } = await dbApi.getEntries(page, pageSize);
+    const skip = (page - 1) * pageSize;
+    const entries = await prisma.entry.findMany({
+      skip,
+      take: pageSize,
+      include: {
+        progress: true,
+      },
+      orderBy: { id: "asc" },
+    });
+    const totalCount = await prisma.entry.count();
+    const hasNextPage = skip + pageSize < totalCount;
+    const hasPreviousPage = page > 1;
     return NextResponse.json({ entries, hasNextPage, hasPreviousPage });
   } catch (error: unknown) {
     const errorMessage = error instanceof Error ? error.message : "An unknown error occurred";
@@ -47,13 +56,25 @@ export async function POST(request: NextRequest) {
 
     let newEntry;
     if (progress) {
-      newEntry = await dbApi.createEntryWithProgress(
-        entryData as EntryCreateDTO,
-        progress as EntryProgressCreateDTO
-      );
+      newEntry = await prisma.entry.create({
+        data: {
+          ...entryData,
+          progress: {
+            create: progress,
+          },
+        },
+        include: { progress: true },
+      });
     } else {
-      // Provide a default status for EntryProgressCreateDTO
-      newEntry = await dbApi.createEntryWithProgress(entryData as EntryCreateDTO, { status: EntryStatus.NOT_STARTED });
+      newEntry = await prisma.entry.create({
+        data: {
+          ...entryData,
+          progress: {
+            create: { status: EntryStatus.NOT_STARTED },
+          },
+        },
+        include: { progress: true },
+      });
     }
 
     return NextResponse.json(newEntry, { status: 201 });
