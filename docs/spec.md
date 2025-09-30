@@ -25,7 +25,7 @@ album notes, MyAnimeList API, etc.)
 - **Database**: PostgreSQL
 - **ORM**: Prisma
 - **Migrations**: Prisma Migrate
-- **Testing (unit)**: Vitest
+- **Testing (unit)**: Jest
 - **Testing (e2e)**: Playwright (later phase)
 - **LLM Integration**: Gemini API (relation extraction, metadata parsing)
 
