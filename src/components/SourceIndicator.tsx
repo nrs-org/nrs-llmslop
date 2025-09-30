@@ -1,6 +1,7 @@
 import React from "react";
 
 
+
 const sources = [
   {
     name: "MyAnimeList",
@@ -29,44 +30,45 @@ const sources = [
   },
   // VGMDB artist
   {
-    name: "VGMDB (Artist)",
+    name: "VGMDB",
     icon: "/source-icons/VGMDB.svg",
     match: /vgmdb\.net\/artist\//,
-    type: "artist",
+    type: "Artist",
   },
   // VGMDB album
   {
-    name: "VGMDB (Album)",
+    name: "VGMDB",
     icon: "/source-icons/VGMDB.svg",
     match: /vgmdb\.net\/album\//,
-    type: "album",
+    type: "Album",
   },
   // VGMDB generic
   {
     name: "VGMDB",
     icon: "/source-icons/VGMDB.svg",
     match: /vgmdb\.net\//,
+    type: "Generic",
   },
   // YouTube video
   {
-    name: "YouTube (Video)",
+    name: "YouTube",
     icon: "/source-icons/YouTube.svg",
     match: /youtube\.com\/watch\?v=|youtu\.be\//,
-    type: "video",
+    type: "Video",
   },
   // YouTube playlist
   {
-    name: "YouTube (Playlist)",
+    name: "YouTube",
     icon: "/source-icons/YouTube.svg",
     match: /youtube\.com\/playlist\?list=/,
-    type: "playlist",
+    type: "Playlist",
   },
   // YouTube user/channel
   {
-    name: "YouTube (User/Channel)",
+    name: "YouTube",
     icon: "/source-icons/YouTube.svg",
     match: /youtube\.com\/(user|channel|@)[^/]+/,
-    type: "user",
+    type: "User",
   },
   {
     name: "Spotify",
@@ -91,25 +93,30 @@ export function detectSource(url: string) {
   return null;
 }
 
+
 export const SourceIndicator: React.FC<{ url: string }> = ({ url }) => {
   const source = detectSource(url);
   if (!url) return null;
-  if (!source) {
-    return (
-      <div className="flex items-center gap-2 text-sm text-gray-500 mt-2">
-        <span>Unknown source</span>
-      </div>
-    );
-  }
   return (
-    <div className="flex items-center gap-2 text-sm mt-2">
-      <img src={source.icon} alt={source.name} width={24} height={24} />
-      <span>
-        {source.name}
-        {source.type ? (
-          <span className="ml-1 text-xs text-gray-400">[{source.type}]</span>
-        ) : null}
-      </span>
+    <div
+      className={`transition-all duration-200 ${url ? 'opacity-100 translate-y-0' : 'opacity-0 -translate-y-2 pointer-events-none h-0'}`}
+      aria-hidden={!url}
+    >
+      {source ? (
+        <div className="flex items-center gap-2 text-sm mt-2">
+          <img src={source.icon} alt={source.name} width={24} height={24} />
+          <span>
+            {source.name}
+            {source.type ? (
+              <span className="ml-1 text-xs text-gray-400">({source.type})</span>
+            ) : null}
+          </span>
+        </div>
+      ) : (
+        <div className="flex items-center gap-2 text-sm text-gray-500 mt-2">
+          <span>Unknown source</span>
+        </div>
+      )}
     </div>
   );
 };

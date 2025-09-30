@@ -72,3 +72,23 @@
     @apply bg-background text-foreground;
   }
 }
+
+/* Animation for fade-slide (used in SourceIndicator and entry form) */
+.fade-slide-enter {
+  opacity: 0;
+  transform: translateY(-8px);
+}
+.fade-slide-enter-active {
+  opacity: 1;
+  transform: translateY(0);
+  transition: opacity 200ms, transform 200ms;
+}
+.fade-slide-exit {
+  opacity: 1;
+  transform: translateY(0);
+}
+.fade-slide-exit-active {
+  opacity: 0;
+  transform: translateY(-8px);
+  transition: opacity 200ms, transform 200ms;
+}

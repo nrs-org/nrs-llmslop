@@ -3,7 +3,8 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { useRouter } from "next/navigation";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
+// Removed react-transition-group (CSSTransition)
 import { detectSource } from "@/components/SourceIndicator";
 import { SourceIndicator } from "@/components/SourceIndicator";
 
@@ -40,11 +41,29 @@ export default function NewEntryPage() {
     return "Other";
   }
 
+  function getTypePrefix(type: string): string {
+    switch (type) {
+      case "Anime": return "A";
+      case "Manga": return "L";
+      case "LightNovel": return "L";
+      case "VisualNovel": return "V";
+      case "MusicAlbum":
+      case "MusicArtist":
+      case "MusicTrack":
+      case "MusicGeneric": return "M";
+      case "Franchise": return "F";
+      case "Game": return "G";
+      default: return "X";
+    }
+  }
+
   function autoGenId(type: string, url: string): string {
     // Basic implementation based on DAH_entry_id_impl spec
+    const prefix = getTypePrefix(type);
     if (!isValidUrl(url)) {
-      // Custom ID: type only (timestamp removed temporarily)
-      return `${type}`;
+      // Custom ID: type prefix + timestamp
+      const timestamp = new Date().toISOString().replaceAll(/[:\-TZ]/g, "").replace(/\..+$/, "");
+      return `${prefix}-${timestamp}`;
     }
     // Example: Anime-MAL-12345
     if (/myanimelist\.net\/anime\/(\d+)/.test(url)) {
@@ -76,27 +95,76 @@ export default function NewEntryPage() {
       return `M-VGMDB-AR-${m?.[1]}`;
     }
     // fallback
-    return `${type}`;
+    const timestamp = new Date().toISOString().replaceAll(/[:\-TZ]/g, "").replace(/\..+$/, "");
+    return `${prefix}-${timestamp}`;
   }
 
   const source = detectSource(url);
-  const validUrl = isValidUrl(url);
+  const validUrl = url === "" ? true : isValidUrl(url);
+  const isMalformedUrl = url !== "" && !isValidUrl(url);
+  const isKnownSource = validUrl && url !== "" && source && source.name !== "URL";
+  const needsName = validUrl && url !== "" && !isKnownSource;
   const detectedType = autoDetectType(url);
-  const entryTypeValue = entryType || detectedType;
-  const entryIdValue = customId || autoGenId(entryTypeValue, url);
+  // Entry type auto-adjust if ID prefix mismatches
+  function getTypeFromPrefix(id: string): string | null {
+    if (id.startsWith("A-")) return "Anime";
+    if (id.startsWith("L-")) return "Manga";
+    if (id.startsWith("V-")) return "VisualNovel";
+    if (id.startsWith("M-")) return "MusicTrack";
+    if (id.startsWith("F-")) return "Franchise";
+    if (id.startsWith("G-")) return "Game";
+    return null;
+  }
+  const entryTypeValueRaw = entryType || detectedType;
+  const entryIdValue = customId || autoGenId(entryTypeValueRaw, url);
+  const prefixType = getTypeFromPrefix(entryIdValue);
+  const entryTypeValue = prefixType || entryTypeValueRaw;
+
+  // Real-time validation
+  useEffect(() => {
+    if (isMalformedUrl) {
+      setError("Malformed URL. Please enter a valid URL or leave empty for no source.");
+      return;
+    }
+    if (customId) {
+      const prefixTypeCustom = getTypeFromPrefix(customId);
+      if (prefixTypeCustom && prefixTypeCustom !== entryTypeValueRaw) {
+        setError(`ID prefix (${customId.split("-")[0]}) does not match entry type (${entryTypeValueRaw}). Adjusting entry type to ${prefixTypeCustom}.`);
+        setEntryType(prefixTypeCustom);
+        return;
+      }
+    }
+    setError(null);
+  }, [url, customId, entryType]);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setLoading(true);
     setError(null);
+    // Error: malformed non-empty URL
+    if (isMalformedUrl) {
+      setError("Malformed URL. Please enter a valid URL or leave empty for no source.");
+      setLoading(false);
+      return;
+    }
+    // Error: ID prefix mismatch
+    if (customId) {
+      const prefixTypeCustom = getTypeFromPrefix(customId);
+      if (prefixTypeCustom && prefixTypeCustom !== entryTypeValueRaw) {
+        setError(`ID prefix (${customId.split("-")[0]}) does not match entry type (${entryTypeValueRaw}). Adjusting entry type to ${prefixTypeCustom}.`);
+        setEntryType(prefixTypeCustom);
+        setLoading(false);
+        return;
+      }
+    }
     try {
       // Compose entry data
       const entryData: any = {
         id: entryIdValue,
-        title: validUrl ? `Imported from ${url}` : customName || "Untitled",
+        title: validUrl ? `Imported from ${url}` : "Untitled",
         entryType: entryTypeValue,
-        url: validUrl ? url : undefined,
-        name: !validUrl ? customName : undefined,
+        url: validUrl && url !== "" ? url : undefined,
+        urlSourceName: needsName ? customName : undefined,
       };
       const res = await fetch("/api/entries", {
         method: "POST",
@@ -128,20 +196,22 @@ export default function NewEntryPage() {
                 value={url}
                 onChange={e => setUrl(e.target.value)}
                 className="w-full border rounded px-3 py-2"
-                placeholder="Paste entry URL here"
+                placeholder="Paste entry URL here (leave empty for no source)"
               />
               <SourceIndicator url={url} />
             </div>
-            {!validUrl && (
-              <div>
-                <label htmlFor="customName" className="block text-sm font-medium mb-1">Name</label>
+            {needsName && (
+              <div
+                className="transition-all duration-200 ease-in-out opacity-100 translate-y-0 animate-fade-slide"
+              >
+                <label htmlFor="customName" className="block text-sm font-medium mb-1">URL Key Name</label>
                 <input
                   id="customName"
                   type="text"
                   value={customName}
                   onChange={e => setCustomName(e.target.value)}
                   className="w-full border rounded px-3 py-2"
-                  placeholder="Entry name (required for unknown URL)"
+                  placeholder="Unique name for this URL (required for unknown source)"
                   required
                 />
               </div>
@@ -178,7 +248,9 @@ export default function NewEntryPage() {
                 placeholder="Auto-generated or custom entry ID"
               />
             </div>
-            {error && <div className="text-red-500 text-sm">{error}</div>}
+            {!!error && (
+              <div className="text-red-500 text-sm transition-all duration-200 ease-in-out opacity-100 translate-y-0 animate-fade-slide">{error}</div>
+            )}
             <Button type="submit" disabled={loading} className="w-full">
               {loading ? "Importing..." : "Import Entry"}
             </Button>
