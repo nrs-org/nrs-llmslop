@@ -32,12 +32,20 @@ export default function EntryListPage({ searchParams }: EntryListPageProps) {
   const [apiResponse, setApiResponse] = React.useState<EntryListApiResponse | null>(null);
   const [loading, setLoading] = React.useState(true);
   const [error, setError] = React.useState<string | null>(null);
+  const [search, setSearch] = React.useState("");
 
   React.useEffect(() => {
     async function fetchEntries() {
       try {
         setLoading(true);
-        const res = await fetch(`http://localhost:3000/api/entries?page=${page}&pageSize=${pageSize}`);
+        const params = new URLSearchParams({
+          page: page.toString(),
+          pageSize: pageSize.toString(),
+        });
+        if (search.trim()) {
+          params.append("search", search.trim());
+        }
+        const res = await fetch(`http://localhost:3000/api/entries?${params.toString()}`);
         if (!res.ok) {
           throw new Error(`HTTP error! status: ${res.status}`);
         }
@@ -52,7 +60,7 @@ export default function EntryListPage({ searchParams }: EntryListPageProps) {
     }
 
     fetchEntries();
-  }, [page, pageSize]);
+  }, [page, pageSize, search]);
 
   const handlePageSizeChange = (value: string) => {
     const newPageSize = parseInt(value);
@@ -83,7 +91,23 @@ export default function EntryListPage({ searchParams }: EntryListPageProps) {
     <div className="container mx-auto p-4 flex-1 flex flex-col">
       <Card className="w-full flex-1 flex flex-col">
         <CardHeader>
-          <h1 className="text-2xl font-bold mb-4 text-white">NRS rankings</h1>
+          <div className="flex flex-wrap items-center gap-y-2 gap-x-4 mb-4">
+            <div className="flex-1 min-w-[200px]">
+              <h1 className="text-2xl font-bold text-white">NRS rankings</h1>
+            </div>
+            <div className="flex items-center gap-4 flex-wrap min-w-[300px]">
+              <input
+                type="text"
+                value={search}
+                onChange={e => setSearch(e.target.value)}
+                placeholder="Search by title..."
+                className="border rounded px-3 py-2 w-64 text-base bg-white dark:bg-neutral-900 text-black dark:text-white"
+              />
+              <Link href="/entries/new">
+                <Button variant="default">+ New Entry</Button>
+              </Link>
+            </div>
+          </div>
         </CardHeader>
         <CardContent className="flex-1 flex flex-col">
           <div className="flex flex-col flex-1 overflow-x-auto">

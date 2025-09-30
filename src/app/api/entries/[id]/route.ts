@@ -66,3 +66,24 @@ export async function DELETE(request: NextRequest, context: { params: Promise<{ 
     return NextResponse.json({ error: errorMessage }, { status: 404 });
   }
 }
+
+// PATCH /api/entries/[id] - Update entry title by ID
+export async function PATCH(request: NextRequest, context: { params: Promise<{ id: string }> }): Promise<NextResponse> {
+  try {
+    const { id } = await context.params;
+    const body = await request.json();
+    if (!body.title || typeof body.title !== "string" || !body.title.trim()) {
+      return NextResponse.json({ error: "Title is required." }, { status: 400 });
+    }
+    const updated = await prisma.entry.update({
+      where: { id },
+      data: { title: body.title.trim() },
+    });
+    return NextResponse.json(updated);
+  } catch (error: any) {
+    if (error.code === "P2025") {
+      return NextResponse.json({ error: "Entry not found." }, { status: 404 });
+    }
+    return NextResponse.json({ error: error.message || "Unknown error" }, { status: 400 });
+  }
+}

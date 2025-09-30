@@ -4,7 +4,7 @@ import Link from 'next/link';
 
 export default function Home() {
   return (
-    <div className="flex items-center justify-center mx-auto">
+    <div className="flex flex-1 items-center justify-center mx-auto">
       <Card className="w-[420px]">
         <CardHeader className="text-center">
           <CardTitle className="text-lg lowercase">nrs-<span className="italic">llmslop</span></CardTitle>
