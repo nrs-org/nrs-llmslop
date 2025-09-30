@@ -12,11 +12,12 @@ import {
   RelationUpdateDTO,
   NRSContextUpdateDTO,
 } from "./db_types";
+import { DeepMockProxy } from "jest-mock-extended";
 
 export class DbApi {
-  private prisma: PrismaClient;
+  private prisma: PrismaClient | DeepMockProxy<PrismaClient>;
 
-  constructor(prismaClient: PrismaClient) {
+  constructor(prismaClient: PrismaClient | DeepMockProxy<PrismaClient>) {
     this.prisma = prismaClient;
   }
 
