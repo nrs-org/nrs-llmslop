@@ -1,10 +1,163 @@
 "use client";
 
-import { Entry, Impact, Relation, EntryProgress, ImpactContribution, RelationContribution } from "@/generated/prisma";
+import { Entry, Impact, Relation, EntryProgress, ImpactContribution, RelationContribution, EntryType } from "@/generated/prisma";
 import React, { useState, useRef } from "react";
 interface EntryDetailsPageProps {
   params: Promise<{ id: string }>;
 }
+
+import { Fragment } from "react";
+import { Accordion, AccordionItem, AccordionTrigger, AccordionContent } from "@/components/ui/accordion";
+import { getSupportedSourceType, parseSourceType, SupportedSourceTypeName } from "@/lib/sourceProcessing";
+// Helper to extract and format additional sources from dah_meta
+function getAdditionalSources(meta: any): any {
+  if (!meta || typeof meta !== "object") return null;
+  return meta.DAH_additional_sources || null;
+}
+
+const sourceFieldMap = [
+  {
+    key: "id_MyAnimeList",
+    type: "MAL" satisfies SupportedSourceTypeName,
+    url: (idFragments: string[], entryType: EntryType) => {
+      let typePath = "anime";
+      if (entryType === "Manga" || entryType === "LightNovel") typePath = "manga";
+      return `https://myanimelist.net/${typePath}/${idFragments[0]}`;
+    },
+  },
+  {
+    key: "id_AniList",
+    type: "AL" satisfies SupportedSourceTypeName,
+    url: (idFragments: string[], entryType: EntryType) => {
+      let typePath = "anime";
+      if (entryType === "Manga" || entryType === "LightNovel") typePath = "manga";
+      return `https://anilist.co/${typePath}/${idFragments[0]}`;
+    },
+  },
+  {
+    key: "id_Kitsu",
+    type: "KS" satisfies SupportedSourceTypeName,
+    url: (idFragments: string[], entryType: EntryType) => {
+      let typePath = "anime";
+      if (entryType === "Manga" || entryType === "LightNovel") typePath = "manga";
+      return `https://kitsu.io/${typePath}/${idFragments[0]}`;
+    },
+  },
+  {
+    key: "id_AniDB",
+    type: "ADB" satisfies SupportedSourceTypeName,
+    url: (idFragments: string[], entryType: EntryType) => {
+      let typePath = "anime";
+      if (entryType === "Manga" || entryType === "LightNovel") typePath = "manga";
+      return `https://anidb.net/${typePath}/${idFragments[0]}`;
+    },
+  },
+  {
+    key: "id_VNDB",
+    type: "VNDB" satisfies SupportedSourceTypeName,
+    url: (idFragments: string[], entryType: EntryType) => `https://vndb.org/v${idFragments[0]}`,
+  },
+  // VGMDB sources
+  { key: "vgmdb.artist", type: "VGMDB-Artist" satisfies SupportedSourceTypeName, url: (idFragments: string[]) => `https://vgmdb.net/artist/${idFragments[0]}` },
+  { key: "vgmdb.album", type: "VGMDB-Album" satisfies SupportedSourceTypeName, url: (idFragments: string[]) => `https://vgmdb.net/album/${idFragments[0]}` },
+  { key: "vgmdb.track", type: "VGMDB-Track" satisfies SupportedSourceTypeName, url: (idFragments: string[]) => `https://vgmdb.net/album/${idFragments[0]}` }, // fallback to album
+  // YouTube sources
+  { key: "youtube.video", type: "YT-Video" satisfies SupportedSourceTypeName, url: (idFragments: string[]) => `https://youtube.com/watch?v=${idFragments[0]}` },
+  { key: "youtube.playlist", type: "YT-Playlist" satisfies SupportedSourceTypeName, url: (idFragments: string[]) => `https://youtube.com/playlist?list=${idFragments[0]}` },
+  { key: "youtube.user", type: "YT-User" satisfies SupportedSourceTypeName, url: (idFragments: string[]) => `https://youtube.com/${idFragments[0]}` },
+];
+
+function renderSourceButtons(sources: any, entryType: EntryType) {
+  return (
+    <div className="flex flex-wrap gap-2 mb-4">
+      {sourceFieldMap.map(cfg => {
+        let idFragments: string[] = [];
+        let pseudoUrl = "";
+        // MAL, AL, Kitsu, AniDB
+        if (["id_MyAnimeList", "id_AniList", "id_Kitsu", "id_AniDB"].includes(cfg.key) && (typeof sources?.[cfg.key] === "string" || typeof sources?.[cfg.key] === "number")) {
+          idFragments = [String(sources[cfg.key])];
+          let typePath = "anime";
+          if (entryType === "Manga" || entryType === "LightNovel") typePath = "manga";
+          pseudoUrl = `/${typePath}/${idFragments[0]}`;
+        }
+        // VNDB
+        if (cfg.key === "id_VNDB" && (typeof sources?.[cfg.key] === "string" || typeof sources?.[cfg.key] === "number")) {
+          idFragments = [String(sources[cfg.key])];
+          pseudoUrl = `/v${idFragments[0]}`;
+        }
+        // VGMDB
+        if (cfg.key === "vgmdb.artist" && sources?.vgmdb?.artist) {
+          idFragments = [String(sources.vgmdb.artist)];
+          pseudoUrl = `/artist/${idFragments[0]}`;
+        }
+        if (cfg.key === "vgmdb.album" && sources?.vgmdb?.album) {
+          idFragments = [String(sources.vgmdb.album)];
+          pseudoUrl = `/album/${idFragments[0]}`;
+        }
+        if (cfg.key === "vgmdb.track" && sources?.vgmdb?.album && sources?.vgmdb?.track) {
+          idFragments = [String(sources.vgmdb.album), String(sources.vgmdb.track)];
+          pseudoUrl = `/album/${idFragments[0]}/track/${idFragments[1]}`;
+        }
+        // YouTube
+        if (cfg.key === "youtube.video" && sources?.youtube?.video) {
+          idFragments = [String(sources.youtube.video)];
+          pseudoUrl = `/watch?v=${idFragments[0]}`;
+        }
+        if (cfg.key === "youtube.playlist" && sources?.youtube?.playlist) {
+          idFragments = [String(sources.youtube.playlist)];
+          pseudoUrl = `/playlist?list=${idFragments[0]}`;
+        }
+        if (cfg.key === "youtube.user" && sources?.youtube?.channelId) {
+          idFragments = ["channel", String(sources.youtube.channelId)];
+          pseudoUrl = `/channel/${idFragments[1]}`;
+        }
+        if (cfg.key === "youtube.user" && sources?.youtube?.channelHandle) {
+          idFragments = ["@" + String(sources.youtube.channelHandle)];
+          pseudoUrl = `/@${sources.youtube.channelHandle}`;
+        }
+        if (idFragments.length === 0) return null;
+        const spec = getSupportedSourceType(cfg.type);
+        const href = cfg.url(idFragments, entryType);
+        return (
+          <a
+            key={cfg.key + "-" + idFragments.join("-")}
+            href={href}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center gap-1 px-3 py-1 rounded bg-gray-100 dark:bg-neutral-900 hover:bg-gray-200 dark:hover:bg-neutral-800 border text-sm font-medium shadow"
+            title={spec?.name || cfg.key}
+          >
+            <img src={spec?.icon || ""} alt={spec?.name || cfg.key} className="w-5 h-5" />
+            <span>{pseudoUrl}</span>
+          </a>
+        );
+      })}
+    </div>
+  );
+}
+
+function renderUrlTable(urls: any[]) {
+  if (!urls || !Array.isArray(urls) || urls.length === 0) return null;
+  return (
+    <table className="w-full text-sm">
+      <thead>
+        <tr>
+          <th className="text-left font-semibold">Name</th>
+          <th className="text-left font-semibold">URL</th>
+        </tr>
+      </thead>
+      <tbody>
+        {urls.map((u: any, i: number) => (
+          <tr key={i}>
+            <td className="py-1 pr-2">{u.name}</td>
+            <td className="py-1"><a href={u.src} target="_blank" rel="noopener noreferrer" className="text-blue-600 underline break-all">{u.src}</a></td>
+          </tr>
+        ))}
+      </tbody>
+    </table>
+  );
+}
+
 
 interface EntryWithRelations extends Entry {
   progress: EntryProgress | null;
@@ -146,6 +299,25 @@ export default function EntryDetailsPage({ params }: EntryDetailsPageProps) {
           {entry.progress.length_seconds && (
             <p>Length (seconds): {entry.progress.length_seconds}</p>
           )}
+        </div>
+      )}
+
+      {/* Additional Sources Section (from DAH_meta) */}
+      {entry.dah_meta && getAdditionalSources(entry.dah_meta) && (
+        <div className="mt-4 p-4 border rounded-lg shadow-sm">
+          <h2 className="text-xl font-semibold">Additional Sources</h2>
+          {renderSourceButtons(getAdditionalSources(entry.dah_meta), entry.entryType)}
+          <Accordion type="single" collapsible className="w-full">
+            <AccordionItem value="urls">
+              <AccordionTrigger>Extra Sources</AccordionTrigger>
+              <AccordionContent>
+                {Array.isArray(getAdditionalSources(entry.dah_meta)?.urls) && getAdditionalSources(entry.dah_meta)?.urls.length > 0
+                  ? renderUrlTable(getAdditionalSources(entry.dah_meta)?.urls)
+                  : <div className="text-gray-500 italic py-2">No extra sources available.</div>
+                }
+              </AccordionContent>
+            </AccordionItem>
+          </Accordion>
         </div>
       )}
 

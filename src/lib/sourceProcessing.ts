@@ -149,3 +149,10 @@ export function parseSourceType(type: string): SupportedSourceType | undefined {
   }
   return undefined;
 }
+
+export function getSupportedSourceType(type: SupportedSourceTypeName): SupportedSourceType {
+  for(const [key, value] of Object.entries(sourceSpecs)) {
+    if(key === type) return value;
+  }
+  throw new Error(`Unsupported source type: ${type}`);
+}
