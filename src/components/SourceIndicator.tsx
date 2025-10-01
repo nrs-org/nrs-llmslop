@@ -15,7 +15,7 @@ export const SourceIndicator: React.FC<{ url: string }> = ({ url }) => {
   const source = detectSourceType(url);
   const icon = source?.type?.icon || "/source-icons/URL.svg";
   const name = source?.type?.name || "URL";
-  const subname = source?.type?.subname;
+  const upstreamType = source?.upstreamType;
   return (
     <div
       className={`transition-all duration-200 ${url ? 'opacity-100 translate-y-0' : 'opacity-0 -translate-y-2 pointer-events-none h-0'}`}
@@ -27,8 +27,10 @@ export const SourceIndicator: React.FC<{ url: string }> = ({ url }) => {
           <img src={icon} alt={name} width={24} height={24} />
           <span>
             {name}
-            {subname && (
-              <span className="ml-1 text-xs text-gray-400">({subname})</span>
+            {upstreamType && (
+              <span className="ml-1 text-xs text-gray-400">
+                ({upstreamType})
+              </span>
             )}
           </span>
         </div>

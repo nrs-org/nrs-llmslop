@@ -59,6 +59,7 @@ export default function NewEntryPage() {
     }
 
     const source = detectSourceType(url);
+    const upstreamType = source?.upstreamType;
 
 
     // Auto-update ID and entry type when URL changes
@@ -67,9 +68,14 @@ export default function NewEntryPage() {
         setAutoId(generatedId);
         // If user pastes a URL, auto-detect entry type and ID
         if (url && isValidUrl(url)) {
-            const detectedType = source?.type?.entryType;
-            if (detectedType && detectedType !== entryType) {
-                setEntryType(detectedType);
+            // Use upstreamType for auto-detection if available
+            if (upstreamType) {
+                // Try to map upstreamType to EntryType
+                if (upstreamType.toLowerCase().includes("anime")) setEntryType(EntryType.Anime);
+                else if (upstreamType.toLowerCase().includes("manga")) setEntryType(EntryType.Manga);
+                else if (upstreamType.toLowerCase().includes("lightnovel")) setEntryType(EntryType.LightNovel);
+                else if (upstreamType.toLowerCase().includes("music")) setEntryType(EntryType.MusicTrack);
+                // Extend mapping as needed
             }
             setCustomId(generatedId);
         }
@@ -120,8 +126,9 @@ export default function NewEntryPage() {
         // Error: ID prefix mismatch
         if (customId) {
             const prefixTypeCustom = getTypeFromPrefix(customId);
-            if (prefixTypeCustom && prefixTypeCustom !== source?.type.entryType) {
-                setError(`ID prefix (${customId.split("-")[0]}) does not match entry type (${source?.type.entryType}). Adjusting entry type to ${prefixTypeCustom}.`);
+            // Use upstreamType for error message
+            if (prefixTypeCustom && upstreamType && !upstreamType.toLowerCase().includes(prefixTypeCustom.toLowerCase())) {
+                setError(`ID prefix (${customId.split("-")[0]}) does not match entry type (${upstreamType}). Adjusting entry type to ${prefixTypeCustom}.`);
                 setEntryType(prefixTypeCustom);
                 setLoading(false);
                 return;
@@ -134,7 +141,7 @@ export default function NewEntryPage() {
                 body: JSON.stringify({
                     id: customId || autoId,
                     title: isValidUrl(url) ? `Imported from ${url}` : "Untitled",
-                    entryType: getTypeFromPrefix(customId) || source?.type.entryType || EntryType.Other,
+                    entryType: getTypeFromPrefix(customId) || (upstreamType && upstreamType.toLowerCase().includes("anime") ? EntryType.Anime : upstreamType && upstreamType.toLowerCase().includes("manga") ? EntryType.Manga : EntryType.Other),
                     url: isValidUrl(url) && url !== "" ? url : undefined,
                     urlSourceName: source && source.type ? source.type.name : customName,
                 }),

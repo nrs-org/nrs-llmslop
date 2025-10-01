@@ -116,7 +116,12 @@ export async function POST(request: NextRequest) {
     // Entry type vs ID prefix
     if (validatedData.id && validatedData.entryType) {
       const prefixType = getTypeFromPrefix(validatedData.id);
-      if (prefixType && prefixType !== validatedData.entryType) {
+      // L- prefix can be Manga or LightNovel
+      if (prefixType === EntryType.Manga || prefixType === EntryType.LightNovel) {
+        if (validatedData.entryType !== EntryType.Manga && validatedData.entryType !== EntryType.LightNovel) {
+          return NextResponse.json({ error: `ID prefix (${validatedData.id.split("-")[0]}) does not match entry type (${validatedData.entryType})` }, { status: 400 });
+        }
+      } else if (prefixType && prefixType !== validatedData.entryType) {
         return NextResponse.json({ error: `ID prefix (${validatedData.id.split("-")[0]}) does not match entry type (${validatedData.entryType})` }, { status: 400 });
       }
     }
@@ -167,14 +172,15 @@ export async function POST(request: NextRequest) {
         case "VNDB":
           entryData.dah_meta.DAH_additional_sources.id_VNDB = entryId;
           break;
-        case "VGMDB-Album":
-          entryData.dah_meta.DAH_additional_sources.vgmdb = { album: entryId };
-          break;
-        case "VGMDB-Artist":
-          entryData.dah_meta.DAH_additional_sources.vgmdb = { artist: entryId };
-          break;
-        case "VGMDB-Track":
-          entryData.dah_meta.DAH_additional_sources.vgmdb = { album: entryId, track: parseInt(parsedId.suffix!) };
+        case "VGMDB":
+          // Use subTypePrefix from parsedId to distinguish album, artist, track
+          if (parsedId.subTypePrefix === "AL") {
+            entryData.dah_meta.DAH_additional_sources.vgmdb = { album: entryId };
+          } else if (parsedId.subTypePrefix === "AR") {
+            entryData.dah_meta.DAH_additional_sources.vgmdb = { artist: entryId };
+          } else if (parsedId.subTypePrefix === "AL" && parsedId.suffix) {
+            entryData.dah_meta.DAH_additional_sources.vgmdb = { album: entryId, track: parseInt(parsedId.suffix) };
+          }
           break;
         default: // If url/urlSourceName are present, add to DAH_additional_sources under dah_meta
           if (validatedData.url && validatedData.urlSourceName) {

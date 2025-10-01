@@ -5,9 +5,14 @@ import { detectSourceType } from "./sourceProcessing";
 export function autoGenId(type: EntryType, url: string): string {
   const source = detectSourceType(url);
   if(source) {
-    const id = source.type.nrsId(source.idFragments);
+    // Use getNrsId from sourceProcessing
+    // Try to infer entryType from source.entryTypes if available
+    const entryType = source.entryTypes && source.entryTypes.length > 0 ? source.entryTypes[0] : type;
+    // @ts-ignore: getNrsId is exported from sourceProcessing
+    const { getNrsId } = require("./sourceProcessing");
+    const id = getNrsId(source.type.type, source.idFragments, entryType);
     if(id) return id;
-  } 
+  }
   const prefix = type ? getPrefixFromType(type as EntryType) : "O";
   const timestamp = new Date().toISOString().replaceAll(/[:\-Z]/g, "").replace(/\..+$/, "");
   return `${prefix}-${timestamp}`;
@@ -18,7 +23,13 @@ export function getTypeFromPrefix(id: string): EntryType | undefined {
   if (id.startsWith("A-")) return EntryType.Anime;
   if (id.startsWith("L-")) return EntryType.Manga;
   if (id.startsWith("V-")) return EntryType.VisualNovel;
-  if (id.startsWith("M-")) return undefined;
+  if (id.startsWith("M-")) {
+    // Try to infer music type from the rest of the ID
+    if (id.includes("AL")) return EntryType.MusicAlbum;
+    if (id.includes("AR")) return EntryType.MusicArtist;
+    if (id.includes("TR") || id.includes("TRACK")) return EntryType.MusicTrack;
+    return EntryType.MusicTrack; // fallback
+  }
   if (id.startsWith("F-")) return EntryType.Franchise;
   if (id.startsWith("G-") || id.startsWith("GF-")) return EntryType.Game;
   return undefined;
