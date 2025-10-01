@@ -1,3 +1,59 @@
+// Zod schema for PATCH body validation
+const patchEntrySchema = z.object({
+  title: z.string().optional(),
+  id_AniDB: z.string().optional(),
+  id_AniList: z.string().optional(),
+  id_Kitsu: z.string().optional(),
+  id_MyAnimeList: z.string().optional(),
+  provider: z.string().optional(),
+  providerId: z.string().optional(),
+  dah_meta: z.record(z.string(), z.any()).optional(),
+});
+// PATCH /api/entries/[id] - Update entry fields and DAH_meta extensions
+export async function PATCH(request: NextRequest) {
+  try {
+    const url = new URL(request.url);
+    const id = url.pathname.split("/").pop();
+    if (!id) {
+      return NextResponse.json({ error: "Missing entry ID in URL" }, { status: 400 });
+    }
+    const body = await request.json();
+    let validatedBody;
+    try {
+      validatedBody = patchEntrySchema.parse(body);
+    } catch (err) {
+      return NextResponse.json({ error: "Invalid PATCH body: " + (err instanceof Error ? err.message : String(err)) }, { status: 400 });
+    }
+    // Only allow updating certain fields
+    const updateData: any = {};
+    if (typeof validatedBody.title === "string" && validatedBody.title.trim()) {
+      updateData.title = validatedBody.title.trim();
+    }
+    // Provider IDs
+    if (validatedBody.id_AniDB !== undefined) updateData.id_AniDB = validatedBody.id_AniDB;
+    if (validatedBody.id_AniList !== undefined) updateData.id_AniList = validatedBody.id_AniList;
+    if (validatedBody.id_Kitsu !== undefined) updateData.id_Kitsu = validatedBody.id_Kitsu;
+    if (validatedBody.id_MyAnimeList !== undefined) updateData.id_MyAnimeList = validatedBody.id_MyAnimeList;
+    // DAH_meta extension merge
+    let entry = null;
+    if (validatedBody.dah_meta && typeof validatedBody.dah_meta === "object") {
+      entry = await prisma.entry.findUnique({ where: { id } });
+      if (!entry) {
+        return NextResponse.json({ error: "Entry not found" }, { status: 404 });
+      }
+      const dahMetaBase = (typeof entry.dah_meta === "object" && entry.dah_meta !== null) ? entry.dah_meta : {};
+      updateData.dah_meta = { ...dahMetaBase, ...validatedBody.dah_meta };
+    }
+    // Update entry
+    const updated = await prisma.entry.update({
+      where: { id },
+      data: updateData,
+    });
+    return NextResponse.json(updated);
+  } catch (error: any) {
+    return NextResponse.json({ error: error.message || "Unknown error" }, { status: 400 });
+  }
+}
 import { NextResponse, NextRequest } from "next/server";
 import { EntryCreateDTO, EntryProgressCreateDTO } from "@/lib/db_types";
 import { EntryStatus, EntryType } from "@/generated/prisma";

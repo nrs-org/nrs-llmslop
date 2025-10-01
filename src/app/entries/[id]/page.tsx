@@ -7,6 +7,7 @@ interface EntryDetailsPageProps {
 }
 
 import { Fragment } from "react";
+import DOMPurify from "dompurify";
 import { Accordion, AccordionItem, AccordionTrigger, AccordionContent } from "@/components/ui/accordion";
 import { getSupportedSourceType, parseSourceType, SupportedSourceTypeName } from "@/lib/sourceProcessing";
 // Helper to extract and format additional sources from dah_meta
@@ -116,7 +117,7 @@ function renderSourceButtons(sources: any, entryType: EntryType) {
           pseudoUrl = `/@${sources.youtube.channelHandle}`;
         }
         if (idFragments.length === 0) return null;
-        const spec = getSupportedSourceType(cfg.type);
+        const spec = getSupportedSourceType(cfg.type as SupportedSourceTypeName);
         const href = cfg.url(idFragments, entryType);
         return (
           <a
@@ -173,7 +174,39 @@ export default function EntryDetailsPage({ params }: EntryDetailsPageProps) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [notFound, setNotFound] = useState(false);
+  const [populateLoading, setPopulateLoading] = useState(false);
+  const [populateError, setPopulateError] = useState<string | null>(null);
+  const [populateSuccess, setPopulateSuccess] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
+  async function handlePopulateId() {
+    if (!entry || entry.entryType !== "Anime" || !entry.id) return;
+    setPopulateLoading(true);
+    setPopulateError(null);
+    setPopulateSuccess(false);
+    try {
+      // Call the new populate API endpoint
+      const res = await fetch(`/api/entries/${entry.id}/populate`, {
+        method: "POST"
+      });
+      if (!res.ok) {
+        const errData = await res.json();
+        throw new Error(errData?.error || "Failed to populate entry");
+      }
+      // Refresh entry
+      setPopulateSuccess(true);
+      setError(null);
+      setTimeout(() => setPopulateSuccess(false), 3000);
+      // Refetch entry data
+      const refreshed = await fetch(`/api/entries/${entry.id}`, { cache: "no-store" });
+      const refreshedData = await refreshed.json();
+      setEntry(refreshedData);
+      setNewTitle(refreshedData?.title || "");
+    } catch (err: any) {
+      setPopulateError(err.message || "Unknown error");
+    } finally {
+      setPopulateLoading(false);
+    }
+  }
 
   React.useEffect(() => {
     (async () => {
@@ -229,6 +262,20 @@ export default function EntryDetailsPage({ params }: EntryDetailsPageProps) {
 
   return (
     <div className="container mx-auto p-4">
+      {/* Populate ID button for anime entries with MAL ID */}
+      {entry?.entryType === "Anime" && entry?.id && (
+        <div className="mb-4 flex items-center gap-2">
+          <button
+            className="px-3 py-1 rounded bg-blue-600 text-white hover:bg-blue-700 disabled:bg-gray-300 disabled:text-gray-500 font-medium shadow"
+            onClick={handlePopulateId}
+            disabled={populateLoading}
+          >
+            {populateLoading ? "Populating..." : "Populate IDs & Metadata"}
+          </button>
+          {populateError && <span className="text-red-500 ml-2">{populateError}</span>}
+          {populateSuccess && <span className="text-green-600 ml-2">Populated!</span>}
+        </div>
+      )}
       <div className="flex items-center gap-2 mb-4">
         <h1 className="text-3xl font-bold flex-1">
           {editingTitle ? (
@@ -321,9 +368,250 @@ export default function EntryDetailsPage({ params }: EntryDetailsPageProps) {
         </div>
       )}
 
+      {/* General Information Card from DAH_animanga_info and DAH_anime_info */}
+      {entry.dah_meta && (() => {
+        let animangaInfo = null;
+        let animeInfo = null;
+        if (typeof entry.dah_meta === "object" && entry.dah_meta !== null && !Array.isArray(entry.dah_meta)) {
+          const metaObj = entry.dah_meta as Record<string, any>;
+          if (metaObj.DAH_animanga_info && typeof metaObj.DAH_animanga_info === "object" && metaObj.DAH_animanga_info !== null) {
+            animangaInfo = metaObj.DAH_animanga_info;
+          }
+          if (metaObj.DAH_anime_info && typeof metaObj.DAH_anime_info === "object" && metaObj.DAH_anime_info !== null) {
+            animeInfo = metaObj.DAH_anime_info;
+          }
+        }
+        if (!animangaInfo && !animeInfo) return null;
+        // Prefer animangaInfo for main display, fallback to animeInfo for extra fields
+        const info = animangaInfo || animeInfo;
+        // Basic HTML sanitizer for description
+        function sanitizeHtml(html: string) {
+          return DOMPurify.sanitize(html, { USE_PROFILES: { html: true } });
+        }
+        // Helper to format anime season
+        function formatAnimeSeason(seasonObj: any) {
+          if (!seasonObj || typeof seasonObj !== "object") return null;
+          const season = seasonObj.season ? String(seasonObj.season).toUpperCase() : "";
+          const year = seasonObj.year ? String(seasonObj.year) : "";
+          // Capitalize season
+          let seasonName = season.charAt(0) + season.slice(1).toLowerCase();
+          return seasonName && year ? `${seasonName} ${year}` : null;
+        }
+        // Helper to title-case array
+        function toTitleCaseArray(arr: string[]): string[] {
+          return arr.map(str => str.replace(/\w+/g, w => w.charAt(0).toUpperCase() + w.slice(1)));
+        }
+        // Helper to format duration in seconds
+        function formatDuration(seconds: number): string {
+          if (isNaN(seconds) || seconds <= 0) return "";
+          if (seconds < 60) return `${seconds} sec`;
+          if (seconds < 3600) return `${Math.round(seconds / 60)} min`;
+          const h = Math.floor(seconds / 3600);
+          const m = Math.round((seconds % 3600) / 60);
+          return `${h} hr${h > 1 ? "s" : ""}${m > 0 ? ` ${m} min` : ""}`;
+        }
+        // Helper to format status enum
+        // Helper to format type enum
+        function formatType(type: string): string {
+          switch (type) {
+            case "TV": return "TV";
+            case "MOVIE": return "Movie";
+            case "OVA": return "OVA";
+            case "ONA": return "ONA";
+            case "SPECIAL": return "Special";
+            case "UNKNOWN": return "Unknown";
+            default: return type;
+          }
+        }
+        function formatStatus(status: string): string {
+          switch (status) {
+            case "FINISHED": return "Finished";
+            case "ONGOING": return "Ongoing";
+            case "UPCOMING": return "Upcoming";
+            case "UNKNOWN": return "Unknown";
+            default: return status;
+          }
+        }
+        return (
+          <div className="mt-4 p-4 border rounded-lg shadow-sm">
+            <h2 className="text-xl font-semibold mb-4">General Information</h2>
+            <div className="flex flex-col md:flex-row gap-6">
+              {/* Picture/Thumbnail + short info */}
+              <div className="flex-shrink-0 flex flex-col items-start justify-start w-full md:w-1/3 gap-4">
+
+                {/* Scores */}
+                {info.score && typeof info.score === "object" && (
+                  <div className="flex flex-center align-center w-full gap-2">
+                    {/* <strong className="self-center">Score:</strong> */}
+                    <div className="flex flex-wrap gap-2 mt-1 mx-auto">
+                      {typeof info.score.median !== "undefined" && (
+                        <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200 text-sm font-semibold shadow">
+                          <span>Median:</span>
+                          <span>{Number(info.score.median).toFixed(2)}</span>
+                        </span>
+                      )}
+                      {typeof info.score.arithmeticMean !== "undefined" && (
+                        <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-200 text-sm font-semibold shadow">
+                          <span>Mean:</span>
+                          <span>{Number(info.score.arithmeticMean).toFixed(2)}</span>
+                        </span>
+                      )}
+                      {typeof info.score.arithmeticGeometricMean !== "undefined" && (
+                        <span
+                          className="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-purple-100 dark:bg-purple-900 text-purple-800 dark:text-purple-200 text-sm font-semibold shadow"
+                          title="AGM = Arithmetic-Geometric Mean. A robust average combining arithmetic and geometric means."
+                        >
+                          <span>AGM:</span>
+                          <span>{Number(info.score.arithmeticGeometricMean).toFixed(2)}</span>
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                )}
+                <div className="w-full max-w-xs flex flex-col items-center mx-auto">
+                  {(info.picture || info.thumbnail) && (
+                    <>
+                      {info.picture && (
+                        <img src={info.picture} alt="Picture" className="w-full rounded-lg shadow mb-2" style={{ objectFit: 'cover' }} />
+                      )}
+                      {!info.picture && info.thumbnail && (
+                        <img src={info.thumbnail} alt="Thumbnail" className="w-full rounded-lg shadow mb-2" style={{ objectFit: 'cover' }} />
+                      )}
+                    </>
+                  )}
+                  {/* Short info: type, status, etc. */}
+                  <div className="flex flex-col gap-2 w-full m-2">
+                    {info.type && <div><strong>Type:</strong> {formatType(info.type)}</div>}
+                    {info.status && <div><strong>Status:</strong> {formatStatus(info.status)}</div>}
+                    {animeInfo && animeInfo.animeSeason && <div><strong>Anime Season:</strong> {formatAnimeSeason(animeInfo.animeSeason)}</div>}
+                    {animeInfo && typeof animeInfo.episodes !== "undefined" && <div><strong>Episodes:</strong> {animeInfo.episodes}</div>}
+                    {animeInfo && animeInfo.duration && typeof animeInfo.duration === "object" && (
+                      <div><strong>Duration:</strong> {formatDuration(Number(animeInfo.duration.value))}</div>
+                    )}
+                    {animeInfo && typeof animeInfo.duration !== "object" && typeof animeInfo.duration !== "undefined" && (
+                      <div><strong>Duration:</strong> {formatDuration(Number(animeInfo.duration))}</div>
+                    )}
+                  </div>
+                </div>
+              </div>
+              {/* Main info: title, description, synonyms, tags, scores, studios, producers */}
+              <div className="flex-1 flex flex-col gap-4">
+                {/* Title (if present) */}
+                {info.title && <h3 className="text-2xl font-bold mb-2">{info.title}</h3>}
+                {/* Description (HTML, sanitized) */}
+                {info.description && (
+                  <div className="mb-4">
+                    <div className="font-semibold mb-1">Description</div>
+                    <div className="bg-gray-50 dark:bg-neutral-900 p-3 rounded text-base" style={{ minHeight: '120px' }}
+                      dangerouslySetInnerHTML={{ __html: sanitizeHtml(info.description) }}
+                    />
+                  </div>
+                )}
+                {/* Studios as tag list or accordion (moved to right column) */}
+                {animeInfo && Array.isArray(animeInfo.studios) && animeInfo.studios.length > 0 && (
+                  animeInfo.studios.length > 5 ? (
+                    <Accordion type="single" collapsible className="w-full">
+                      <AccordionItem value="studios">
+                        <AccordionTrigger>Studios ({animeInfo.studios.length})</AccordionTrigger>
+                        <AccordionContent>
+                          <div className="flex flex-wrap gap-2 py-2">
+                            {toTitleCaseArray(animeInfo.studios).map((studio: string, idx: number) => (
+                              <span key={idx} className="px-2 py-1 rounded bg-green-200 dark:bg-green-800 text-xs font-medium shadow">{studio}</span>
+                            ))}
+                          </div>
+                        </AccordionContent>
+                      </AccordionItem>
+                    </Accordion>
+                  ) : (
+                    <div className="flex flex-wrap gap-2 items-center w-full">
+                      Studios:
+                      {toTitleCaseArray(animeInfo.studios).map((studio: string, idx: number) => (
+                        <span key={idx} className="px-2 py-1 rounded bg-green-200 dark:bg-green-800 text-xs font-medium shadow">{studio}</span>
+                      ))}
+                    </div>
+                  )
+                )}
+                {/* Producers as tag list or accordion (moved to right column) */}
+                {animeInfo && Array.isArray(animeInfo.producers) && animeInfo.producers.length > 0 && (
+                  animeInfo.producers.length > 5 ? (
+                    <Accordion type="single" collapsible className="w-full">
+                      <AccordionItem value="producers">
+                        <AccordionTrigger>Producers ({animeInfo.producers.length})</AccordionTrigger>
+                        <AccordionContent>
+                          <div className="flex flex-wrap gap-2 py-2">
+                            {toTitleCaseArray(animeInfo.producers).map((producer: string, idx: number) => (
+                              <span key={idx} className="px-2 py-1 rounded bg-blue-200 dark:bg-blue-800 text-xs font-medium shadow">{producer}</span>
+                            ))}
+                          </div>
+                        </AccordionContent>
+                      </AccordionItem>
+                    </Accordion>
+                  ) : (
+                    <div className="flex flex-wrap gap-2 items-center w-full">
+                      Producers:
+                      {toTitleCaseArray(animeInfo.producers).map((producer: string, idx: number) => (
+                        <span key={idx} className="px-2 py-1 rounded bg-blue-200 dark:bg-blue-800 text-xs font-medium shadow">{producer}</span>
+                      ))}
+                    </div>
+                  )
+                )}
+                {/* Synonyms */}
+                {Array.isArray(info.synonyms) && info.synonyms.length > 0 && (
+                  info.synonyms.length > 5 ? (
+                    <Accordion type="single" collapsible className="w-full">
+                      <AccordionItem value="synonyms">
+                        <AccordionTrigger>Synonyms ({info.synonyms.length})</AccordionTrigger>
+                        <AccordionContent>
+                          <div className="flex flex-wrap gap-2 py-2">
+                            {info.synonyms.map((syn: string, idx: number) => (
+                              <span key={idx} className="px-2 py-1 rounded bg-yellow-200 dark:bg-yellow-800 text-xs font-medium shadow">{syn}</span>
+                            ))}
+                          </div>
+                        </AccordionContent>
+                      </AccordionItem>
+                    </Accordion>
+                  ) : (
+                    <div className="flex flex-wrap gap-2 items-center w-full">
+                      Synonyms:
+                      {info.synonyms.map((syn: string, idx: number) => (
+                        <span key={idx} className="px-2 py-1 rounded bg-yellow-200 dark:bg-yellow-800 text-xs font-medium shadow">{syn}</span>
+                      ))}
+                    </div>
+                  )
+                )}
+                {/* Tags */}
+                {Array.isArray(info.tags) && info.tags.length > 0 && (
+                  info.tags.length > 5 ? (
+                    <Accordion type="single" collapsible className="w-full">
+                      <AccordionItem value="tags">
+                        <AccordionTrigger>Tags ({info.tags.length})</AccordionTrigger>
+                        <AccordionContent>
+                          <div className="flex flex-wrap gap-2 py-2">
+                            {info.tags.map((tag: string, idx: number) => (
+                              <span key={idx} className="px-2 py-1 rounded bg-gray-200 dark:bg-neutral-800 text-xs font-medium">{tag}</span>
+                            ))}
+                          </div>
+                        </AccordionContent>
+                      </AccordionItem>
+                    </Accordion>
+                  ) : (
+                    <div className="flex flex-wrap gap-2 items-center w-full">
+                      Tags:
+                      {info.tags.map((tag: string, idx: number) => (
+                        <span key={idx} className="px-2 py-1 rounded bg-gray-200 dark:bg-neutral-800 text-xs font-medium">{tag}</span>
+                      ))}
+                    </div>
+                  )
+                )}
+              </div>
+            </div>
+          </div>
+        );
+      })()}
+      {/* Raw DAH Meta for debugging */}
       {entry.dah_meta && (
         <div className="mt-4 p-4 border rounded-lg shadow-sm">
-          <h2 className="text-xl font-semibold">DAH Meta</h2>
+          <h2 className="text-xl font-semibold">DAH Meta (Raw)</h2>
           <pre className="bg-gray-100 dark:bg-neutral-900 p-2 rounded-md overflow-auto">
             {JSON.stringify(entry.dah_meta, null, 2)}
           </pre>
