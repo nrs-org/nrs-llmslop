@@ -43,7 +43,7 @@ model Entry {
   entryType EntryType
   bestGirl  String?
   progress  EntryProgress?
-  additionalSources Json?
+  // additionalSources field removed; now stored in dah_meta
   dah_meta Json?
 
   // NRS-related fields

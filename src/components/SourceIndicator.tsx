@@ -20,6 +20,7 @@ export const SourceIndicator: React.FC<{ url: string }> = ({ url }) => {
     <div
       className={`transition-all duration-200 ${url ? 'opacity-100 translate-y-0' : 'opacity-0 -translate-y-2 pointer-events-none h-0'}`}
       aria-hidden={!url}
+      style={{ position: 'relative' }}
     >
       {isValidUrl(url) ? (
         <div className="flex items-center gap-2 text-sm mt-2">

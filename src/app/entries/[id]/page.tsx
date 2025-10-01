@@ -149,15 +149,6 @@ export default function EntryDetailsPage({ params }: EntryDetailsPageProps) {
         </div>
       )}
 
-      {entry.additionalSources && (
-        <div className="mt-4 p-4 border rounded-lg shadow-sm">
-          <h2 className="text-xl font-semibold">Additional Sources</h2>
-          <pre className="bg-gray-100 dark:bg-neutral-900 p-2 rounded-md overflow-auto">
-            {JSON.stringify(entry.additionalSources, null, 2)}
-          </pre>
-        </div>
-      )}
-
       {entry.dah_meta && (
         <div className="mt-4 p-4 border rounded-lg shadow-sm">
           <h2 className="text-xl font-semibold">DAH Meta</h2>
@@ -167,34 +158,6 @@ export default function EntryDetailsPage({ params }: EntryDetailsPageProps) {
         </div>
       )}
 
-      {entry.impacts && entry.impacts.length > 0 && (
-        <div className="mt-4 p-4 border rounded-lg shadow-sm">
-          <h2 className="text-xl font-semibold">Impacts</h2>
-          <ul>
-            {entry.impacts.map((ic) => (
-              <li key={ic.impact.id} className="mt-2">
-                <p>Name: {ic.impact.name}</p>
-                <p>Score Vector: {JSON.stringify(ic.impact.scoreVector)}</p>
-                <p>Contributing Weight: {JSON.stringify(ic.contributingWeight)}</p>
-              </li>
-            ))}
-          </ul>
-        </div>
-      )}
-
-      {entry.relations && entry.relations.length > 0 && (
-        <div className="mt-4 p-4 border rounded-lg shadow-sm">
-          <h2 className="text-xl font-semibold">Relations</h2>
-          <ul>
-            {entry.relations.map((rc) => (
-              <li key={rc.relation.id} className="mt-2">
-                <p>Name: {rc.relation.name}</p>
-                <p>Contributing Weight: {JSON.stringify(rc.contributingWeight)}</p>
-              </li>
-            ))}
-          </ul>
-        </div>
-      )}
     </div>
   );
 }

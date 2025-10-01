@@ -11,6 +11,33 @@ import { detectSourceType } from "@/lib/sourceProcessing";
 import { parseEntryId } from "@/lib/entryId";
 import { EntryType } from "@/generated/prisma";
 
+// TooltipButton component for source indicator
+function TooltipButton() {
+    const [showTooltip, setShowTooltip] = React.useState(false);
+    return (
+        <button
+            type="button"
+            className="ml-2 p-1 rounded-full bg-gray-200 hover:bg-gray-300 text-gray-700 text-xs relative"
+            onMouseEnter={() => setShowTooltip(true)}
+            onMouseLeave={() => setShowTooltip(false)}
+            aria-label="Source info"
+            style={{ width: 20, height: 20, display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+        >
+            ?
+            {showTooltip &&
+                <div className="absolute top-full left-0 mt-2 bg-black text-left text-white text-xs rounded px-3 py-2 z-10 shadow-lg max-w-[360px] w-max whitespace-normal break-words">
+                    <ul className="list-disc pl-4 space-y-1">
+                        <li>
+                            VGMDB tracks: use <span className="break-all">https://vgmdb.net/album/&#123;albumid&#125;/&#123;trackNumber&#125;</span>. Prefer creating the album entry first, then add tracks from its details page.
+                        </li>
+                        <li>
+                            For Kitsu, only numeric anime IDs are supported (e.g. <span className="break-all">kitsu.app/anime/6799</span>). Named URLs like <span className="break-all">kitsu.app/anime/one-piece</span> are not supported.
+                        </li>
+                    </ul>
+                </div>}
+        </button>
+    );
+}
 
 export default function NewEntryPage() {
     const router = useRouter();
@@ -72,7 +99,7 @@ export default function NewEntryPage() {
         }
         try {
             if (customId) parseEntryId(customId);
-        } catch(error: any) {
+        } catch (error: any) {
             setError(`Invalid entry ID format: ${error.message}`);
             return;
         }
@@ -137,7 +164,10 @@ export default function NewEntryPage() {
                 <CardContent>
                     <form className="grid gap-4" onSubmit={handleSubmit}>
                         <div>
-                            <label htmlFor="url" className="block text-sm font-medium mb-1">Import URL</label>
+                            <div className="flex items-center gap-2 mb-1">
+                                <label htmlFor="url" className="block text-sm font-medium">Import URL</label>
+                                <TooltipButton />
+                            </div>
                             <input
                                 id="url"
                                 type="text"
