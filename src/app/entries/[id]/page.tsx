@@ -335,7 +335,7 @@ export default function EntryDetailsPage({ params }: EntryDetailsPageProps) {
         )}
       </div>
       {error && <div className="text-red-500 mb-2">{error}</div>}
-      <p>ID: {entry.id}</p>
+      <p className="text-gray-500 italic">{entry.id}</p>
       {entry.bestGirl && <p>Best Girl: {entry.bestGirl}</p>}
 
       {entry.progress && (
@@ -481,16 +481,14 @@ export default function EntryDetailsPage({ params }: EntryDetailsPageProps) {
                   )}
                   {/* Short info: type, status, etc. */}
                   <div className="flex flex-col gap-2 w-full m-2">
-                    {info.type && <div><strong>Type:</strong> {formatType(info.type)}</div>}
-                    {info.status && <div><strong>Status:</strong> {formatStatus(info.status)}</div>}
-                    {animeInfo && animeInfo.animeSeason && <div><strong>Anime Season:</strong> {formatAnimeSeason(animeInfo.animeSeason)}</div>}
-                    {animeInfo && typeof animeInfo.episodes !== "undefined" && <div><strong>Episodes:</strong> {animeInfo.episodes}</div>}
-                    {animeInfo && animeInfo.duration && typeof animeInfo.duration === "object" && (
-                      <div><strong>Duration:</strong> {formatDuration(Number(animeInfo.duration.value))}</div>
-                    )}
-                    {animeInfo && typeof animeInfo.duration !== "object" && typeof animeInfo.duration !== "undefined" && (
-                      <div><strong>Duration:</strong> {formatDuration(Number(animeInfo.duration))}</div>
-                    )}
+                    <div className="grid grid-cols-2 gap-x-4 gap-y-2 w-full">
+                      {info.type && <><span className="text-gray-500 font-medium text-right">Type:</span><span className="font-semibold text-gray-900 dark:text-white">{formatType(info.type)}</span></>}
+                      {info.status && <><span className="text-gray-500 font-medium text-right">Status:</span><span className="font-semibold text-gray-900 dark:text-white">{formatStatus(info.status)}</span></>}
+                      {animeInfo && animeInfo.animeSeason && <><span className="text-gray-500 font-medium text-right">Anime Season:</span><span className="font-semibold text-gray-900 dark:text-white">{formatAnimeSeason(animeInfo.animeSeason)}</span></>}
+                      {animeInfo && typeof animeInfo.episodes !== "undefined" && <><span className="text-gray-500 font-medium text-right">Episodes:</span><span className="font-semibold text-gray-900 dark:text-white">{animeInfo.episodes}</span></>}
+                      {animeInfo && animeInfo.duration && typeof animeInfo.duration === "object" && <><span className="text-gray-500 font-medium text-right">Duration:</span><span className="font-semibold text-gray-900 dark:text-white">{formatDuration(Number(animeInfo.duration.value))}</span></>}
+                      {animeInfo && typeof animeInfo.duration !== "object" && typeof animeInfo.duration !== "undefined" && <><span className="text-gray-500 font-medium text-right">Duration:</span><span className="font-semibold text-gray-900 dark:text-white">{formatDuration(Number(animeInfo.duration))}</span></>}
+                    </div>
                   </div>
                 </div>
               </div>
