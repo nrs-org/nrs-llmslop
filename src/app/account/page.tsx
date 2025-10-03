@@ -216,7 +216,7 @@ export default function AccountPage() {
                             body: JSON.stringify({ provider: svc.provider }),
                           });
                           const { url } = await res.json();
-                          window.open(url, "_blank", "noopener,noreferrer");
+                          document.location.href = url;
                         } finally {
                           setOauthLoading(null);
                         }
