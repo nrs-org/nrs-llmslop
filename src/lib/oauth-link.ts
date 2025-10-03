@@ -30,7 +30,7 @@ export function getOAuthAuthorizationUrl(
     redirect_uri: config.redirectUri,
     response_type: "code",
   });
-  if(config.scopes) params.set("scope", config.scopes.join(" "));
+  if (config.scopes) params.set("scope", config.scopes.join(" "));
   if (config.useStateParam !== false && state) params.set("state", state);
   if (config.accessType) params.set("access_type", config.accessType);
   if (config.prompt) params.set("prompt", config.prompt);
@@ -137,15 +137,15 @@ export async function refreshAccessToken(config: OAuthLinkConfig, refreshToken: 
 }
 
 /** Get valid access token for user; auto-refresh if expired */
-export async function getValidAccessToken(config: OAuthLinkConfig, userId: string) {
-  const account = await prisma.account.findUnique({
+export async function getValidAccessToken(config: OAuthLinkConfig, userId: string): Promise<string | null> {
+  const account = await prisma.linkedAccount.findUnique({
     where: { id: `${userId}:${config.provider}` },
   });
   if (!account) throw new Error("No linked account found");
 
   const now = new Date();
-  if (!account.accessTokenExpiresAt || account.accessTokenExpiresAt > now) {
-    return account.accessToken;
+  if (!account.expiresAt || account.expiresAt > now) {
+    return account.accessToken!;
   }
 
   // Token expired → refresh
@@ -166,32 +166,11 @@ export async function getValidAccessToken(config: OAuthLinkConfig, userId: strin
   return newTokens.access_token;
 }
 
-/** Helper to call provider API using stored access token */
-export async function callProviderApi(
-  config: OAuthLinkConfig,
-  userId: string,
-  url: string,
-  options: RequestInit = {}
-) {
-  const accessToken = await getValidAccessToken(config, userId);
-  const headers = new Headers(options.headers);
-  headers.set("Authorization", `Bearer ${accessToken}`);
-
-  const res = await fetch(url, { ...options, headers });
-  if (!res.ok) {
-    const err = await res.text();
-    throw new Error(`API request failed: ${err}`);
-  }
-
-  return res.json();
-}
-
 export function generateState(length = 32): string {
   const buf = new Uint8Array(length);
   crypto.getRandomValues(buf);
   return Array.from(buf).map(b => b.toString(16).padStart(2, "0")).join("");
 }
-
 
 export const youtubeConfig: OAuthLinkConfig = {
   provider: "youtube",

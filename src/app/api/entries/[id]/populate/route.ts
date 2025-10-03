@@ -2,7 +2,9 @@ import { NextResponse, NextRequest } from "next/server";
 import { PrismaClient } from "@/generated/prisma";
 import { findMyAnimeStrategy } from "./strategies/findMyAnime";
 import { myAnimeListStrategy } from "./strategies/myAnimeList";
-import { title } from "process";
+import { getValidAccessToken, malConfig } from "@/lib/oauth-link";
+import { auth } from "@/lib/auth";
+import { resolveAnimangaInfo } from "@/lib/animanga";
 
 const prisma = new PrismaClient();
 
@@ -18,6 +20,9 @@ export async function POST(request: NextRequest) {
     if (!entry) {
       return NextResponse.json({ error: "Entry not found" }, { status: 404 });
     }
+    // Get userId from request/session (assume header 'x-user-id' for simplicity)
+  const session = await auth.api.getSession({ headers: request.headers });
+  const userId = session?.user?.id;
     // Strategy: find-my-anime (for anime)
     const updateData = {};
     try {
@@ -29,15 +34,27 @@ export async function POST(request: NextRequest) {
     }
     // Strategy: MyAnimeList API (for non-anime entries)
     try {
-      await myAnimeListStrategy(entry);
+      if(userId) {
+        const token = await getValidAccessToken(malConfig, userId!);
+        if(token) {
+          console.debug("token", token);
+          await myAnimeListStrategy(entry, token);
+        }
+      }
     } catch (err: any) {
       return NextResponse.json({ error: `Failed to fetch from MyAnimeList API: ${err?.message || String(err)}` }, { status: 502 });
+    }
+    
+    let title = undefined;
+    if((entry.dah_meta as any)?.DAH_animanga_info) {
+      const animanga = resolveAnimangaInfo((entry.dah_meta as any)?.DAH_animanga_info);
+      title = animanga.title;
     }
     // Persist updated entry
     const updated = await prisma.entry.update({
       where: { id },
       data: {
-        title: entry.title,
+        title,
         dah_meta: entry.dah_meta === null ? undefined : entry.dah_meta
       },
     });

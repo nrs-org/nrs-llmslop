@@ -63,6 +63,7 @@ export async function findMyAnimeStrategy(entry: any) {
     updateEntryTitle(entry, animeData.title);
 
     updateAnimangaInfo(entry, source, {
+      title: animeData.title,
       description: animeData.description,
       type: animeData.type,
       status: animeData.status,
