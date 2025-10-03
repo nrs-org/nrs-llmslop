@@ -5,8 +5,8 @@ export type AnimangaDataSource = "MAL" | "AL" | "ADB" | "KS" | "USER" | "AOD";
 
 export interface AnimangaInfo {
   lastUpdated?: string;
-  title?: string;
-  type?: "TV" | "MOVIE" | "OVA" | "ONA" | "SPECIAL" | "UNKNOWN" | "Manga" | "LightNovel";
+  title?: string
+  type?: "TV" | "OVA" | "ONA" | "MOVIE" | "SPECIAL" | "MUSIC" | "MANGA" | "ONE_SHOT" | "DOUJINSHI" | "MANHWA" | "MANHUA" | "OEL" | "LIGHT_NOVEL" | "UNKNOWN";
   status?: "FINISHED" | "ONGOING" | "UPCOMING" | "UNKNOWN";
   picture?: string;
   thumbnail?: string;
@@ -19,7 +19,7 @@ export interface AnimeInfo {
   lastUpdated?: string;
   episodes?: number;
   animeSeason?: { season: string; year: number };
-  duration?: string | number;
+  duration?: { value: number, unit: "SECONDS" };
   studios?: string[];
   producers?: string[];
 }
