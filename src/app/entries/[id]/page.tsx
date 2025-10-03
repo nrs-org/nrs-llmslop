@@ -2,6 +2,11 @@
 
 import { Entry, Impact, Relation, EntryProgress, ImpactContribution, RelationContribution, EntryType } from "@/generated/prisma";
 import React, { useState, useRef } from "react";
+import {
+  resolveAnimangaInfo,
+  resolveAnimeInfo,
+  resolveMangaInfo,
+} from "@/lib/animanga";
 interface EntryDetailsPageProps {
   params: Promise<{ id: string }>;
 }
@@ -19,53 +24,53 @@ function getAdditionalSources(meta: any): any {
 const sourceFieldMap = [
   {
     key: "id_MyAnimeList",
-    type: "MAL" satisfies SupportedSourceTypeName,
+    type: "MAL",
     url: (idFragments: string[], entryType: EntryType) => {
       let typePath = "anime";
-      if (entryType === "Manga" || entryType === "LightNovel") typePath = "manga";
+      if (entryType === EntryType.Manga || entryType === EntryType.LightNovel) typePath = "manga";
       return `https://myanimelist.net/${typePath}/${idFragments[0]}`;
     },
   },
   {
     key: "id_AniList",
-    type: "AL" satisfies SupportedSourceTypeName,
+    type: "AL",
     url: (idFragments: string[], entryType: EntryType) => {
       let typePath = "anime";
-      if (entryType === "Manga" || entryType === "LightNovel") typePath = "manga";
+      if (entryType === EntryType.Manga || entryType === EntryType.LightNovel) typePath = "manga";
       return `https://anilist.co/${typePath}/${idFragments[0]}`;
     },
   },
   {
     key: "id_Kitsu",
-    type: "KS" satisfies SupportedSourceTypeName,
+    type: "KS",
     url: (idFragments: string[], entryType: EntryType) => {
       let typePath = "anime";
-      if (entryType === "Manga" || entryType === "LightNovel") typePath = "manga";
+      if (entryType === EntryType.Manga || entryType === EntryType.LightNovel) typePath = "manga";
       return `https://kitsu.io/${typePath}/${idFragments[0]}`;
     },
   },
   {
     key: "id_AniDB",
-    type: "ADB" satisfies SupportedSourceTypeName,
+    type: "ADB",
     url: (idFragments: string[], entryType: EntryType) => {
       let typePath = "anime";
-      if (entryType === "Manga" || entryType === "LightNovel") typePath = "manga";
+      if (entryType === EntryType.Manga || entryType === EntryType.LightNovel) typePath = "manga";
       return `https://anidb.net/${typePath}/${idFragments[0]}`;
     },
   },
   {
     key: "id_VNDB",
-    type: "VNDB" satisfies SupportedSourceTypeName,
+    type: "VNDB",
     url: (idFragments: string[], entryType: EntryType) => `https://vndb.org/v${idFragments[0]}`,
   },
   // VGMDB sources
-  { key: "vgmdb.artist", type: "VGMDB-Artist" satisfies SupportedSourceTypeName, url: (idFragments: string[]) => `https://vgmdb.net/artist/${idFragments[0]}` },
-  { key: "vgmdb.album", type: "VGMDB-Album" satisfies SupportedSourceTypeName, url: (idFragments: string[]) => `https://vgmdb.net/album/${idFragments[0]}` },
-  { key: "vgmdb.track", type: "VGMDB-Track" satisfies SupportedSourceTypeName, url: (idFragments: string[]) => `https://vgmdb.net/album/${idFragments[0]}` }, // fallback to album
+  { key: "vgmdb.artist", type: "VGMDB", url: (idFragments: string[]) => `https://vgmdb.net/artist/${idFragments[0]}` },
+  { key: "vgmdb.album", type: "VGMDB", url: (idFragments: string[]) => `https://vgmdb.net/album/${idFragments[0]}` },
+  { key: "vgmdb.track", type: "VGMDB", url: (idFragments: string[]) => `https://vgmdb.net/album/${idFragments[0]}` }, // fallback to album
   // YouTube sources
-  { key: "youtube.video", type: "YT-Video" satisfies SupportedSourceTypeName, url: (idFragments: string[]) => `https://youtube.com/watch?v=${idFragments[0]}` },
-  { key: "youtube.playlist", type: "YT-Playlist" satisfies SupportedSourceTypeName, url: (idFragments: string[]) => `https://youtube.com/playlist?list=${idFragments[0]}` },
-  { key: "youtube.user", type: "YT-User" satisfies SupportedSourceTypeName, url: (idFragments: string[]) => `https://youtube.com/${idFragments[0]}` },
+  { key: "youtube.video", type: "YT", url: (idFragments: string[]) => `https://youtube.com/watch?v=${idFragments[0]}` },
+  { key: "youtube.playlist", type: "YT", url: (idFragments: string[]) => `https://youtube.com/playlist?list=${idFragments[0]}` },
+  { key: "youtube.user", type: "YT", url: (idFragments: string[]) => `https://youtube.com/${idFragments[0]}` },
 ];
 
 function renderSourceButtons(sources: any, entryType: EntryType) {
@@ -179,7 +184,7 @@ export default function EntryDetailsPage({ params }: EntryDetailsPageProps) {
   const [populateSuccess, setPopulateSuccess] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
   async function handlePopulateId() {
-    if (!entry || entry.entryType !== "Anime" || !entry.id) return;
+    if (!entry) return;
     setPopulateLoading(true);
     setPopulateError(null);
     setPopulateSuccess(false);
@@ -260,22 +265,31 @@ export default function EntryDetailsPage({ params }: EntryDetailsPageProps) {
     return <div className="container mx-auto p-4 text-center text-red-500">Unknown error loading entry</div>;
   }
 
+  const resolvedAnimangaInfo = (entry.dah_meta as any)?.DAH_animanga_info
+    ? resolveAnimangaInfo((entry.dah_meta as any).DAH_animanga_info)
+    : null;
+
+  const resolvedAnimeInfo = (entry.dah_meta as any)?.DAH_anime_info
+    ? resolveAnimeInfo((entry.dah_meta as any).DAH_anime_info)
+    : null;
+
+  const resolvedMangaInfo = (entry.dah_meta as any)?.DAH_manga_info
+    ? resolveMangaInfo((entry.dah_meta as any).DAH_manga_info)
+    : null;
+
   return (
     <div className="container mx-auto p-4">
-      {/* Populate ID button for anime entries with MAL ID */}
-      {entry?.entryType === "Anime" && entry?.id && (
-        <div className="mb-4 flex items-center gap-2">
-          <button
-            className="px-3 py-1 rounded bg-blue-600 text-white hover:bg-blue-700 disabled:bg-gray-300 disabled:text-gray-500 font-medium shadow"
-            onClick={handlePopulateId}
-            disabled={populateLoading}
-          >
-            {populateLoading ? "Populating..." : "Populate IDs & Metadata"}
-          </button>
-          {populateError && <span className="text-red-500 ml-2">{populateError}</span>}
-          {populateSuccess && <span className="text-green-600 ml-2">Populated!</span>}
-        </div>
-      )}
+      <div className="mb-4 flex items-center gap-2">
+        <button
+          className="px-3 py-1 rounded bg-blue-600 text-white hover:bg-blue-700 disabled:bg-gray-300 disabled:text-gray-500 font-medium shadow"
+          onClick={handlePopulateId}
+          disabled={populateLoading}
+        >
+          {populateLoading ? "Populating..." : "Populate IDs & Metadata"}
+        </button>
+        {populateError && <span className="text-red-500 ml-2">{populateError}</span>}
+        {populateSuccess && <span className="text-green-600 ml-2">Populated!</span>}
+      </div>
       <div className="flex items-center gap-2 mb-4">
         <h1 className="text-3xl font-bold flex-1">
           {editingTitle ? (
@@ -368,22 +382,12 @@ export default function EntryDetailsPage({ params }: EntryDetailsPageProps) {
         </div>
       )}
 
-      {/* General Information Card from DAH_animanga_info and DAH_anime_info */}
-      {entry.dah_meta && (() => {
-        let animangaInfo = null;
-        let animeInfo = null;
-        if (typeof entry.dah_meta === "object" && entry.dah_meta !== null && !Array.isArray(entry.dah_meta)) {
-          const metaObj = entry.dah_meta as Record<string, any>;
-          if (metaObj.DAH_animanga_info && typeof metaObj.DAH_animanga_info === "object" && metaObj.DAH_animanga_info !== null) {
-            animangaInfo = metaObj.DAH_animanga_info;
-          }
-          if (metaObj.DAH_anime_info && typeof metaObj.DAH_anime_info === "object" && metaObj.DAH_anime_info !== null) {
-            animeInfo = metaObj.DAH_anime_info;
-          }
-        }
-        if (!animangaInfo && !animeInfo) return null;
-        // Prefer animangaInfo for main display, fallback to animeInfo for extra fields
-        const info = animangaInfo || animeInfo;
+      {/* General Information Card from DAH_..._info */}
+      {(resolvedAnimangaInfo || resolvedAnimeInfo || resolvedMangaInfo) && (() => {
+        const info = resolvedAnimangaInfo;
+        const animeInfo = resolvedAnimeInfo;
+        const mangaInfo = resolvedMangaInfo;
+
         // Basic HTML sanitizer for description
         function sanitizeHtml(html: string) {
           return DOMPurify.sanitize(html, { USE_PROFILES: { html: true } });
@@ -394,7 +398,7 @@ export default function EntryDetailsPage({ params }: EntryDetailsPageProps) {
           const season = seasonObj.season ? String(seasonObj.season).toUpperCase() : "";
           const year = seasonObj.year ? String(seasonObj.year) : "";
           // Capitalize season
-          let seasonName = season.charAt(0) + season.slice(1).toLowerCase();
+          const seasonName = season.charAt(0) + season.slice(1).toLowerCase();
           return seasonName && year ? `${seasonName} ${year}` : null;
         }
         // Helper to title-case array
@@ -410,7 +414,6 @@ export default function EntryDetailsPage({ params }: EntryDetailsPageProps) {
           const m = Math.round((seconds % 3600) / 60);
           return `${h} hr${h > 1 ? "s" : ""}${m > 0 ? ` ${m} min` : ""}`;
         }
-        // Helper to format status enum
         // Helper to format type enum
         function formatType(type: string): string {
           switch (type) {
@@ -438,38 +441,8 @@ export default function EntryDetailsPage({ params }: EntryDetailsPageProps) {
             <div className="flex flex-col md:flex-row gap-6">
               {/* Picture/Thumbnail + short info */}
               <div className="flex-shrink-0 flex flex-col items-start justify-start w-full md:w-1/3 gap-4">
-
-                {/* Scores */}
-                {info.score && typeof info.score === "object" && (
-                  <div className="flex flex-center align-center w-full gap-2">
-                    {/* <strong className="self-center">Score:</strong> */}
-                    <div className="flex flex-wrap gap-2 mt-1 mx-auto">
-                      {typeof info.score.median !== "undefined" && (
-                        <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200 text-sm font-semibold shadow">
-                          <span>Median:</span>
-                          <span>{Number(info.score.median).toFixed(2)}</span>
-                        </span>
-                      )}
-                      {typeof info.score.arithmeticMean !== "undefined" && (
-                        <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-200 text-sm font-semibold shadow">
-                          <span>Mean:</span>
-                          <span>{Number(info.score.arithmeticMean).toFixed(2)}</span>
-                        </span>
-                      )}
-                      {typeof info.score.arithmeticGeometricMean !== "undefined" && (
-                        <span
-                          className="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-purple-100 dark:bg-purple-900 text-purple-800 dark:text-purple-200 text-sm font-semibold shadow"
-                          title="AGM = Arithmetic-Geometric Mean. A robust average combining arithmetic and geometric means."
-                        >
-                          <span>AGM:</span>
-                          <span>{Number(info.score.arithmeticGeometricMean).toFixed(2)}</span>
-                        </span>
-                      )}
-                    </div>
-                  </div>
-                )}
                 <div className="w-full max-w-xs flex flex-col items-center mx-auto">
-                  {(info.picture || info.thumbnail) && (
+                  {(info?.picture || info?.thumbnail) && (
                     <>
                       {info.picture && (
                         <img src={info.picture} alt="Picture" className="w-full rounded-lg shadow mb-2" style={{ objectFit: 'cover' }} />
@@ -482,12 +455,14 @@ export default function EntryDetailsPage({ params }: EntryDetailsPageProps) {
                   {/* Short info: type, status, etc. */}
                   <div className="flex flex-col gap-2 w-full m-2">
                     <div className="grid grid-cols-2 gap-x-4 gap-y-2 w-full">
-                      {info.type && <><span className="text-gray-500 font-medium text-right">Type:</span><span className="font-semibold text-gray-900 dark:text-white">{formatType(info.type)}</span></>}
-                      {info.status && <><span className="text-gray-500 font-medium text-right">Status:</span><span className="font-semibold text-gray-900 dark:text-white">{formatStatus(info.status)}</span></>}
-                      {animeInfo && animeInfo.animeSeason && <><span className="text-gray-500 font-medium text-right">Anime Season:</span><span className="font-semibold text-gray-900 dark:text-white">{formatAnimeSeason(animeInfo.animeSeason)}</span></>}
-                      {animeInfo && typeof animeInfo.episodes !== "undefined" && <><span className="text-gray-500 font-medium text-right">Episodes:</span><span className="font-semibold text-gray-900 dark:text-white">{animeInfo.episodes}</span></>}
-                      {animeInfo && animeInfo.duration && typeof animeInfo.duration === "object" && <><span className="text-gray-500 font-medium text-right">Duration:</span><span className="font-semibold text-gray-900 dark:text-white">{formatDuration(Number(animeInfo.duration.value))}</span></>}
-                      {animeInfo && typeof animeInfo.duration !== "object" && typeof animeInfo.duration !== "undefined" && <><span className="text-gray-500 font-medium text-right">Duration:</span><span className="font-semibold text-gray-900 dark:text-white">{formatDuration(Number(animeInfo.duration))}</span></>}
+                      {info?.type && <><span className="text-gray-500 font-medium text-right">Type:</span><span className="font-semibold text-gray-900 dark:text-white">{formatType(info.type)}</span></>}
+                      {info?.status && <><span className="text-gray-500 font-medium text-right">Status:</span><span className="font-semibold text-gray-900 dark:text-white">{formatStatus(info.status)}</span></>}
+                      {animeInfo?.animeSeason && <><span className="text-gray-500 font-medium text-right">Anime Season:</span><span className="font-semibold text-gray-900 dark:text-white">{formatAnimeSeason(animeInfo.animeSeason)}</span></>}
+                      {animeInfo?.episodes !== undefined && <><span className="text-gray-500 font-medium text-right">Episodes:</span><span className="font-semibold text-gray-900 dark:text-white">{animeInfo.episodes}</span></>}
+                      {mangaInfo?.chapters !== undefined && <><span className="text-gray-500 font-medium text-right">Chapters:</span><span className="font-semibold text-gray-900 dark:text-white">{mangaInfo.chapters}</span></>}
+                      {mangaInfo?.volumes !== undefined && <><span className="text-gray-500 font-medium text-right">Volumes:</span><span className="font-semibold text-gray-900 dark:text-white">{mangaInfo.volumes}</span></>}
+                      {animeInfo?.duration && typeof animeInfo.duration === "object" && <><span className="text-gray-500 font-medium text-right">Duration:</span><span className="font-semibold text-gray-900 dark:text-white">{formatDuration(Number((animeInfo.duration as any).value))}</span></>}
+                      {animeInfo?.duration && typeof animeInfo.duration !== "object" && typeof animeInfo.duration !== "undefined" && <><span className="text-gray-500 font-medium text-right">Duration:</span><span className="font-semibold text-gray-900 dark:text-white">{formatDuration(Number(animeInfo.duration))}</span></>}
                     </div>
                   </div>
                 </div>
@@ -495,9 +470,9 @@ export default function EntryDetailsPage({ params }: EntryDetailsPageProps) {
               {/* Main info: title, description, synonyms, tags, scores, studios, producers */}
               <div className="flex-1 flex flex-col gap-4">
                 {/* Title (if present) */}
-                {info.title && <h3 className="text-2xl font-bold mb-2">{info.title}</h3>}
+                {info?.title && <h3 className="text-2xl font-bold mb-2">{info.title}</h3>}
                 {/* Description (HTML, sanitized) */}
-                {info.description && (
+                {info?.description && (
                   <div className="mb-4">
                     <div className="font-semibold mb-1">Description</div>
                     <div className="bg-gray-50 dark:bg-neutral-900 p-3 rounded text-base" style={{ minHeight: '120px' }}
@@ -554,7 +529,7 @@ export default function EntryDetailsPage({ params }: EntryDetailsPageProps) {
                   )
                 )}
                 {/* Synonyms */}
-                {Array.isArray(info.synonyms) && info.synonyms.length > 0 && (
+                {info && Array.isArray(info.synonyms) && info.synonyms.length > 0 && (
                   info.synonyms.length > 5 ? (
                     <Accordion type="single" collapsible className="w-full">
                       <AccordionItem value="synonyms">
@@ -578,7 +553,7 @@ export default function EntryDetailsPage({ params }: EntryDetailsPageProps) {
                   )
                 )}
                 {/* Tags */}
-                {Array.isArray(info.tags) && info.tags.length > 0 && (
+                {info && Array.isArray(info.tags) && info.tags.length > 0 && (
                   info.tags.length > 5 ? (
                     <Accordion type="single" collapsible className="w-full">
                       <AccordionItem value="tags">
