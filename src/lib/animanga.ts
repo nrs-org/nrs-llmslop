@@ -1,4 +1,4 @@
-import { Entry } from "@prisma/client";
+import { Entry } from "@/generated/prisma";
 
 // Source identifiers from DAH_entry_id_impl.md
 export type AnimangaDataSource = "MAL" | "AL" | "ADB" | "KS" | "USER" | "AOD";
@@ -89,8 +89,8 @@ const mangaInfoStrategy: {
 function resolve<T extends { lastUpdated?: string }>(
   data: { [source in AnimangaDataSource]?: Partial<T> },
   strategy: { [key in keyof Omit<T, "lastUpdated">]: ResolutionStrategy },
-): Omit<T, "lastUpdated"> {
-  const resolved: Omit<T, "lastUpdated"> = {};
+): Partial<Omit<T, "lastUpdated">> {
+  const resolved: Partial<Omit<T, "lastUpdated">> = {};
 
   const now = new Date().getTime();
   const sourcePriorities = (Object.keys(data) as AnimangaDataSource[])
@@ -124,7 +124,7 @@ function resolve<T extends { lastUpdated?: string }>(
     if (info) {
       for (const key in info) {
         if (key !== "lastUpdated" && Object.prototype.hasOwnProperty.call(info, key)) {
-          keys.add(key as keyof Omit<T, "lastUpdated">);
+          keys.add(key as unknown as keyof Omit<T, "lastUpdated">);
         }
       }
     }
@@ -137,7 +137,7 @@ function resolve<T extends { lastUpdated?: string }>(
       for (const source of dynamicSourcePriority) {
         const info = data[source];
         if (info && info[key as keyof T] !== undefined) {
-          resolved[key as keyof T] = info[key as keyof T]!;
+          resolved[key] = info[key as keyof T]! as unknown as Omit<T, "lastUpdated">[keyof Omit<T, "lastUpdated">];
           break;
         }
       }
@@ -151,7 +151,7 @@ function resolve<T extends { lastUpdated?: string }>(
           }
         }
       }
-      resolved[key as keyof T] = Array.from(merged) as any;
+      resolved[key] = Array.from(merged) as unknown as Omit<T, "lastUpdated">[keyof Omit<T, "lastUpdated">];
     }
   }
 

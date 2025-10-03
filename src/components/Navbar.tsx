@@ -1,5 +1,6 @@
 import { ThemeToggle } from "@/components/ui/theme-toggle";
 import Link from "next/link";
+import { NavbarUser } from "@/components/NavbarUser";
 
 export function Navbar({ title }: { title: React.ReactNode }) {
   return (
@@ -7,7 +8,10 @@ export function Navbar({ title }: { title: React.ReactNode }) {
       <Link href="/" className="text-xl font-semibold hover:underline focus:outline-none">
         {title}
       </Link>
-      <ThemeToggle />
+      <div className="flex items-center gap-4">
+        <NavbarUser />
+        <ThemeToggle />
+      </div>
     </nav>
   );
 }

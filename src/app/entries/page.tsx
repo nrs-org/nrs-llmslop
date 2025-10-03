@@ -96,7 +96,7 @@ function EntriesTable({ page, pageSize, search, handlePageSizeChange }: { page: 
         if (search.trim()) {
           params.append("search", search.trim());
         }
-        const res = await fetch(`http://localhost:3000/api/entries?${params.toString()}`);
+        const res = await fetch(`/api/entries?${params.toString()}`);
         if (!res.ok) {
           throw new Error(`HTTP error! status: ${res.status}`);
         }

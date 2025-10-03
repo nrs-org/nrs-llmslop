@@ -38,26 +38,26 @@ enum EntryType {
 }
 
 model Entry {
-  id        String   @id
+  id        String         @id
   title     String
   entryType EntryType
   bestGirl  String?
   progress  EntryProgress?
   // additionalSources field removed; now stored in dah_meta
-  dah_meta Json?
+  dah_meta  Json?
 
   // NRS-related fields
-  impacts     ImpactContribution[]
-  relations   RelationContribution[]
+  impacts      ImpactContribution[]
+  relations    RelationContribution[]
   referencedBy RelationReference[]
 }
 
 model EntryProgress {
-  id        String   @id
-  entry     Entry    @relation(fields: [id], references: [id], onDelete: Cascade)
-  status    EntryStatus
+  id             String      @id
+  entry          Entry       @relation(fields: [id], references: [id], onDelete: Cascade)
+  status         EntryStatus
   length_seconds Int?
-  episode   Int?
+  episode        Int?
 }
 
 enum EntryStatus {
@@ -84,25 +84,25 @@ enum VisualType {
 }
 
 model Impact {
-  id           String  @id
-  name         String
-  scoreVector  Json
-  dah_meta     Json?
+  id            String               @id
+  name          String
+  scoreVector   Json
+  dah_meta      Json?
   contributions ImpactContribution[]
 }
 
 model ImpactContribution {
-  impactId String
-  impact   Impact @relation(fields: [impactId], references: [id])
-  entryId  String
-  entry    Entry  @relation(fields: [entryId], references: [id])
+  impactId           String
+  impact             Impact @relation(fields: [impactId], references: [id])
+  entryId            String
+  entry              Entry  @relation(fields: [entryId], references: [id])
   contributingWeight Json
 
   @@id([impactId, entryId])
 }
 
 model Relation {
-  id            String   @id
+  id            String                 @id
   name          String
   dah_meta      Json?
   references    RelationReference[]
@@ -110,21 +110,96 @@ model Relation {
 }
 
 model RelationReference {
-  relationId String
-  relation   Relation @relation(fields: [relationId], references: [id])
-  entryId    String
-  entry      Entry    @relation(fields: [entryId], references: [id])
+  relationId      String
+  relation        Relation @relation(fields: [relationId], references: [id])
+  entryId         String
+  entry           Entry    @relation(fields: [entryId], references: [id])
   transformMatrix Json
 
   @@id([relationId, entryId])
 }
 
 model RelationContribution {
-  relationId String
-  relation   Relation @relation(fields: [relationId], references: [id])
-  entryId    String
-  entry      Entry    @relation(fields: [entryId], references: [id])
+  relationId         String
+  relation           Relation @relation(fields: [relationId], references: [id])
+  entryId            String
+  entry              Entry    @relation(fields: [entryId], references: [id])
   contributingWeight Json
 
   @@id([relationId, entryId])
+}
+
+model User {
+  id            String          @id
+  name          String
+  email         String
+  emailVerified Boolean         @default(false)
+  image         String?
+  createdAt     DateTime        @default(now())
+  updatedAt     DateTime        @default(now()) @updatedAt
+  sessions      Session[]
+  accounts      Account[]
+  LinkedAccount LinkedAccount[]
+
+  @@unique([email])
+  @@map("user")
+}
+
+model Session {
+  id        String   @id
+  expiresAt DateTime
+  token     String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  ipAddress String?
+  userAgent String?
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([token])
+  @@map("session")
+}
+
+model Account {
+  id                    String    @id
+  accountId             String
+  providerId            String
+  userId                String
+  user                  User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  accessToken           String?
+  refreshToken          String?
+  idToken               String?
+  accessTokenExpiresAt  DateTime?
+  refreshTokenExpiresAt DateTime?
+  scope                 String?
+  password              String?
+  createdAt             DateTime  @default(now())
+  updatedAt             DateTime  @updatedAt
+
+  @@map("account")
+}
+
+model Verification {
+  id         String   @id
+  identifier String
+  value      String
+  expiresAt  DateTime
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @default(now()) @updatedAt
+
+  @@map("verification")
+}
+
+model LinkedAccount {
+  id           String    @id @default(uuid())
+  userId       String
+  user         User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  provider     String
+  accessToken  String?
+  refreshToken String?
+  expiresAt    DateTime?
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @default(now()) @updatedAt
+
+  @@unique([userId, provider])
 }
