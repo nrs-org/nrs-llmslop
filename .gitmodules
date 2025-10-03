@@ -4,3 +4,6 @@
 [submodule "docs/nrs-lib-ts"]
 	path = docs/nrs-lib-ts
 	url = https://github.com/nrs-org/nrs-lib-ts
+[submodule "docs/anime-offline-database"]
+	path = docs/anime-offline-database
+	url = https://github.com/manami-project/anime-offline-database/
