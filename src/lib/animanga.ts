@@ -134,12 +134,34 @@ function resolve<T extends { lastUpdated?: string }>(
     const keyStrategy = strategy[key];
 
     if (keyStrategy === "override") {
+      let bestValue: any = undefined;
       for (const source of dynamicSourcePriority) {
         const info = data[source];
-        if (info && info[key as keyof T] !== undefined) {
-          resolved[key] = info[key as keyof T]! as unknown as Omit<T, "lastUpdated">[keyof Omit<T, "lastUpdated">];
+        const value = info ? info[key as keyof T] : undefined;
+        console.debug(key, source, value);
+        if (
+          value !== undefined &&
+          value !== null &&
+          !(typeof value === "string" && value === "UNKNOWN")
+        ) {
+          bestValue = value;
           break;
         }
+        // If no better value found, keep looking for a non-null/undefined/UNKNOWN value
+      }
+      // If no bestValue found, fallback to first null/undefined/UNKNOWN value (if any)
+      if (bestValue === undefined) {
+        for (const source of dynamicSourcePriority) {
+          const info = data[source];
+          const value = info ? info[key as keyof T] : undefined;
+          if (value !== undefined) {
+            bestValue = value;
+            break;
+          }
+        }
+      }
+      if (bestValue !== undefined) {
+        resolved[key] = bestValue as Omit<T, "lastUpdated">[keyof Omit<T, "lastUpdated">];
       }
     } else if (keyStrategy === "merge") {
       const merged = new Set<any>();

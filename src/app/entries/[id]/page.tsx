@@ -11,10 +11,12 @@ interface EntryDetailsPageProps {
   params: Promise<{ id: string }>;
 }
 
-import { Fragment } from "react";
 import DOMPurify from "dompurify";
 import { Accordion, AccordionItem, AccordionTrigger, AccordionContent } from "@/components/ui/accordion";
-import { getSupportedSourceType, parseSourceType, SupportedSourceTypeName } from "@/lib/sourceProcessing";
+import { detectSourceType, getSupportedSourceType, SupportedSourceTypeName, getNrsId } from "@/lib/sourceProcessing";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+
 // Helper to extract and format additional sources from dah_meta
 function getAdditionalSources(meta: any): any {
   if (!meta || typeof meta !== "object") return null;
@@ -172,6 +174,135 @@ interface EntryWithRelations extends Entry {
   referencedBy: Array<{ relation: Relation }>;
 }
 
+interface EditAdditionalSourcesModalProps {
+  open: boolean;
+  onClose: () => void;
+  onSave: (sources: Record<string, any>) => void;
+  initialSources: Record<string, any>;
+  entryType: EntryType;
+}
+
+function mapAdditionalSourcesToInputs(sources: any, entryType: EntryType): { [key: string]: string } {
+  if (!sources || typeof sources !== "object") return {};
+  const inputs: { [key: string]: string } = {};
+  // MAL
+  if (sources.id_MyAnimeList) {
+    let typePath = "anime";
+    if (entryType === "Manga" || entryType === "LightNovel") typePath = "manga";
+    inputs["MAL"] = `https://myanimelist.net/${typePath}/${sources.id_MyAnimeList}`;
+  }
+  // AniList
+  if (sources.id_AniList) {
+    let typePath = "anime";
+    if (entryType === "Manga" || entryType === "LightNovel") typePath = "manga";
+    inputs["AL"] = `https://anilist.co/${typePath}/${sources.id_AniList}`;
+  }
+  // Kitsu
+  if (sources.id_Kitsu) {
+    let typePath = "anime";
+    if (entryType === "Manga" || entryType === "LightNovel") typePath = "manga";
+    inputs["KS"] = `https://kitsu.io/${typePath}/${sources.id_Kitsu}`;
+  }
+  // AniDB
+  if (sources.id_AniDB) {
+    let typePath = "anime";
+    if (entryType === "Manga" || entryType === "LightNovel") typePath = "manga";
+    inputs["ADB"] = `https://anidb.net/${typePath}/${sources.id_AniDB}`;
+  }
+  // VNDB
+  if (sources.id_VNDB) {
+    inputs["VNDB"] = `https://vndb.org/v${sources.id_VNDB}`;
+  }
+  // VGMDB
+  if (sources.vgmdb) {
+    if (sources.vgmdb.artist) inputs["VGMDB"] = `https://vgmdb.net/artist/${sources.vgmdb.artist}`;
+    else if (sources.vgmdb.album) inputs["VGMDB"] = `https://vgmdb.net/album/${sources.vgmdb.album}`;
+    else if (sources.vgmdb.track && sources.vgmdb.album) inputs["VGMDB"] = `https://vgmdb.net/album/${sources.vgmdb.album}/track/${sources.vgmdb.track}`;
+  }
+  // YouTube
+  if (sources.youtube) {
+    if (sources.youtube.video) inputs["YT"] = `https://youtube.com/watch?v=${sources.youtube.video}`;
+    else if (sources.youtube.playlist) inputs["YT"] = `https://youtube.com/playlist?list=${sources.youtube.playlist}`;
+    else if (sources.youtube.channelId) inputs["YT"] = `https://youtube.com/channel/${sources.youtube.channelId}`;
+    else if (sources.youtube.channelHandle) inputs["YT"] = `https://youtube.com/@${sources.youtube.channelHandle}`;
+  }
+  // Spotify
+  if (sources.spotify) {
+    if (sources.spotify.track) inputs["SPOT"] = `https://open.spotify.com/track/${sources.spotify.track}`;
+    else if (sources.spotify.album) inputs["SPOT"] = `https://open.spotify.com/album/${sources.spotify.album}`;
+    else if (sources.spotify.artist) inputs["SPOT"] = `https://open.spotify.com/artist/${sources.spotify.artist}`;
+  }
+  return inputs;
+}
+
+function EditAdditionalSourcesModal({ open, onClose, onSave, initialSources, entryType }: EditAdditionalSourcesModalProps) {
+  const [inputs, setInputs] = useState<{ [key: string]: string }>(mapAdditionalSourcesToInputs(initialSources, entryType));
+  const [parsed, setParsed] = useState<{ [key: string]: any }>({});
+  const supportedSources: SupportedSourceTypeName[] = ["MAL", "AL", "KS", "ADB", "VNDB", "VGMDB", "YT", "SPOT"];
+
+  React.useEffect(() => {
+    const mappedInputs = mapAdditionalSourcesToInputs(initialSources, entryType);
+    setInputs(mappedInputs);
+    // Run validation for all initial values
+    const initialParsed: { [key: string]: any } = {};
+    Object.entries(mappedInputs).forEach(([type, value]) => {
+      initialParsed[type] = value ? !!detectSourceType(value) : false;
+    });
+    setParsed(initialParsed);
+  }, [initialSources, entryType, open]);
+
+  function handleInputChange(type: SupportedSourceTypeName, value: string) {
+    setInputs({ ...inputs, [type]: value });
+    // Only accept valid URLs for all fields
+    const valid = value ? !!detectSourceType(value, [type]) : false;
+    setParsed({ ...parsed, [type]: valid });
+  }
+
+  function handleSave() {
+    // Only save valid sources
+    const validSources = Object.fromEntries(
+      Object.entries(parsed).filter(([type, det]) => det).map(([type]) => [type, inputs[type]])
+    );
+    onSave(validSources);
+    onClose();
+  }
+
+  return (
+    <Dialog open={open} onOpenChange={onClose}>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>Edit Additional Sources</DialogTitle>
+        </DialogHeader>
+        <div className="flex flex-col gap-4">
+          {supportedSources.map(type => {
+            const spec = getSupportedSourceType(type);
+            return (
+              <div key={type} className="flex items-center gap-2">
+                <img src={spec.icon} alt={spec.name} className="w-6 h-6" />
+                <input
+                  className="border rounded px-2 py-1 flex-1"
+                  value={inputs[type] || ""}
+                  onChange={e => handleInputChange(type, e.target.value)}
+                  placeholder={`Enter ${spec.name} URL or ID`}
+                />
+                {parsed[type] ? (
+                  <span className="text-green-600 text-xs">Valid</span>
+                ) : inputs[type] ? (
+                  <span className="text-red-600 text-xs">Invalid</span>
+                ) : null}
+              </div>
+            );
+          })}
+        </div>
+        <DialogFooter>
+          <Button variant="outline" onClick={onClose}>Cancel</Button>
+          <Button variant="default" onClick={handleSave}>Save</Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
 export default function EntryDetailsPage({ params }: EntryDetailsPageProps) {
   const [entry, setEntry] = useState<EntryWithRelations | null>(null);
   const [editingTitle, setEditingTitle] = useState(false);
@@ -182,6 +313,7 @@ export default function EntryDetailsPage({ params }: EntryDetailsPageProps) {
   const [populateLoading, setPopulateLoading] = useState(false);
   const [populateError, setPopulateError] = useState<string | null>(null);
   const [populateSuccess, setPopulateSuccess] = useState(false);
+  const [editSourcesOpen, setEditSourcesOpen] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
   async function handlePopulateId() {
     if (!entry) return;
@@ -276,6 +408,8 @@ export default function EntryDetailsPage({ params }: EntryDetailsPageProps) {
   const resolvedMangaInfo = (entry.dah_meta as any)?.DAH_manga_info
     ? resolveMangaInfo((entry.dah_meta as any).DAH_manga_info)
     : null;
+    
+    console.debug(resolvedMangaInfo);
 
   return (
     <div className="container mx-auto p-4">
@@ -366,7 +500,12 @@ export default function EntryDetailsPage({ params }: EntryDetailsPageProps) {
       {/* Additional Sources Section (from DAH_meta) */}
       {entry.dah_meta && getAdditionalSources(entry.dah_meta) && (
         <div className="mt-4 p-4 border rounded-lg shadow-sm">
-          <h2 className="text-xl font-semibold">Additional Sources</h2>
+          <div className="flex items-center justify-between mb-2">
+            <h2 className="text-xl font-semibold">Additional Sources</h2>
+            <Button variant="outline" size="sm" onClick={() => setEditSourcesOpen(true)}>
+              Edit
+            </Button>
+          </div>
           {renderSourceButtons(getAdditionalSources(entry.dah_meta), entry.entryType)}
           <Accordion type="single" collapsible className="w-full">
             <AccordionItem value="urls">
@@ -423,6 +562,14 @@ export default function EntryDetailsPage({ params }: EntryDetailsPageProps) {
             case "ONA": return "ONA";
             case "SPECIAL": return "Special";
             case "UNKNOWN": return "Unknown";
+            case "MANGA": return "Manga";
+            case "LIGHT_NOVEL": return "Light Novel";
+            case "WEB_NOVEL": return "Web Novel";
+            case "ONE_SHOT": return "One Shot";
+            case "DOUJINSHI": return "Doujinshi";
+            case "MANHWA": return "Manhwa";
+            case "MANHUA": return "Manhua";
+            case "OEL": return "OEL";
             default: return type;
           }
         }
@@ -458,9 +605,9 @@ export default function EntryDetailsPage({ params }: EntryDetailsPageProps) {
                       {info?.type && <><span className="text-gray-500 font-medium text-right">Type:</span><span className="font-semibold text-gray-900 dark:text-white">{formatType(info.type)}</span></>}
                       {info?.status && <><span className="text-gray-500 font-medium text-right">Status:</span><span className="font-semibold text-gray-900 dark:text-white">{formatStatus(info.status)}</span></>}
                       {animeInfo?.animeSeason && <><span className="text-gray-500 font-medium text-right">Anime Season:</span><span className="font-semibold text-gray-900 dark:text-white">{formatAnimeSeason(animeInfo.animeSeason)}</span></>}
-                      {animeInfo?.episodes !== undefined && <><span className="text-gray-500 font-medium text-right">Episodes:</span><span className="font-semibold text-gray-900 dark:text-white">{animeInfo.episodes}</span></>}
-                      {mangaInfo?.chapters !== undefined && <><span className="text-gray-500 font-medium text-right">Chapters:</span><span className="font-semibold text-gray-900 dark:text-white">{mangaInfo.chapters}</span></>}
-                      {mangaInfo?.volumes !== undefined && <><span className="text-gray-500 font-medium text-right">Volumes:</span><span className="font-semibold text-gray-900 dark:text-white">{mangaInfo.volumes}</span></>}
+                      {animeInfo?.episodes !== undefined && animeInfo?.episodes !== null && <><span className="text-gray-500 font-medium text-right">Episodes:</span><span className="font-semibold text-gray-900 dark:text-white">{animeInfo.episodes}</span></>}
+                      {mangaInfo?.chapters !== undefined && mangaInfo?.chapters !== null && <><span className="text-gray-500 font-medium text-right">Chapters:</span><span className="font-semibold text-gray-900 dark:text-white">{mangaInfo.chapters}</span></>}
+                      {mangaInfo?.volumes !== undefined && mangaInfo?.volumes !== null && <><span className="text-gray-500 font-medium text-right">Volumes:</span><span className="font-semibold text-gray-900 dark:text-white">{mangaInfo.volumes}</span></>}
                       {animeInfo?.duration && typeof animeInfo.duration === "object" && <><span className="text-gray-500 font-medium text-right">Duration:</span><span className="font-semibold text-gray-900 dark:text-white">{formatDuration(Number((animeInfo.duration as any).value))}</span></>}
                       {animeInfo?.duration && typeof animeInfo.duration !== "object" && typeof animeInfo.duration !== "undefined" && <><span className="text-gray-500 font-medium text-right">Duration:</span><span className="font-semibold text-gray-900 dark:text-white">{formatDuration(Number(animeInfo.duration))}</span></>}
                     </div>
@@ -591,6 +738,110 @@ export default function EntryDetailsPage({ params }: EntryDetailsPageProps) {
         </div>
       )}
 
+      <Button variant="secondary" onClick={() => setEditSourcesOpen(true)} className="mb-4">Edit Additional Sources</Button>
+      <EditAdditionalSourcesModal
+        open={editSourcesOpen}
+        onClose={() => setEditSourcesOpen(false)}
+        onSave={async (sources: Record<string, any>) => {
+          if (!entry) return;
+          try {
+            // Transform sources record into DAH_additional_sources object
+            const buildAdditionalSources = (inputs: Record<string, string>, entryType: EntryType) => {
+              const result: any = {};
+              // MAL
+              if (inputs.MAL) {
+                const match = inputs.MAL.match(/myanimelist\.net\/(anime|manga)\/(\d+)/);
+                if (match) result.id_MyAnimeList = match[2];
+              }
+              // AniList
+              if (inputs.AL) {
+                const match = inputs.AL.match(/anilist\.co\/(anime|manga)\/(\d+)/);
+                if (match) result.id_AniList = match[2];
+              }
+              // Kitsu
+              if (inputs.KS) {
+                const match = inputs.KS.match(/kitsu\.io\/(anime|manga)\/(\d+)/);
+                if (match) result.id_Kitsu = match[2];
+              }
+              // AniDB
+              if (inputs.ADB) {
+                const match = inputs.ADB.match(/anidb\.net\/(anime|manga)\/(\d+)/);
+                if (match) result.id_AniDB = match[2];
+              }
+              // VNDB
+              if (inputs.VNDB) {
+                const match = inputs.VNDB.match(/vndb\.org\/v(\d+)/);
+                if (match) result.id_VNDB = match[1];
+              }
+              // VGMDB
+              if (inputs.VGMDB) {
+                if (/vgmdb\.net\/artist\/(\d+)/.test(inputs.VGMDB)) {
+                  const match = inputs.VGMDB.match(/vgmdb\.net\/artist\/(\d+)/);
+                  result.vgmdb = { artist: match ? match[1] : undefined };
+                } else if (/vgmdb\.net\/album\/(\d+)/.test(inputs.VGMDB)) {
+                  const match = inputs.VGMDB.match(/vgmdb\.net\/album\/(\d+)/);
+                  result.vgmdb = { album: match ? match[1] : undefined };
+                } else if (/vgmdb\.net\/album\/(\d+)\/track\/(\d+)/.test(inputs.VGMDB)) {
+                  const match = inputs.VGMDB.match(/vgmdb\.net\/album\/(\d+)\/track\/(\d+)/);
+                  result.vgmdb = { album: match ? match[1] : undefined, track: match ? match[2] : undefined };
+                }
+              }
+              // YouTube
+              if (inputs.YT) {
+                if (/youtube\.com\/watch\?v=([\w-]+)/.test(inputs.YT)) {
+                  const match = inputs.YT.match(/youtube\.com\/watch\?v=([\w-]+)/);
+                  result.youtube = { video: match ? match[1] : undefined };
+                } else if (/youtube\.com\/playlist\?list=([\w-]+)/.test(inputs.YT)) {
+                  const match = inputs.YT.match(/youtube\.com\/playlist\?list=([\w-]+)/);
+                  result.youtube = { playlist: match ? match[1] : undefined };
+                } else if (/youtube\.com\/channel\/([\w-]+)/.test(inputs.YT)) {
+                  const match = inputs.YT.match(/youtube\.com\/channel\/([\w-]+)/);
+                  result.youtube = { channelId: match ? match[1] : undefined };
+                } else if (/youtube\.com\/@([\w-]+)/.test(inputs.YT)) {
+                  const match = inputs.YT.match(/youtube\.com\/@([\w-]+)/);
+                  result.youtube = { channelHandle: match ? match[1] : undefined };
+                }
+              }
+              // Spotify
+              if (inputs.SPOT) {
+                if (/open\.spotify\.com\/track\/([\w-]+)/.test(inputs.SPOT)) {
+                  const match = inputs.SPOT.match(/open\.spotify\.com\/track\/([\w-]+)/);
+                  result.spotify = { track: match ? match[1] : undefined };
+                } else if (/open\.spotify\.com\/album\/([\w-]+)/.test(inputs.SPOT)) {
+                  const match = inputs.SPOT.match(/open\.spotify\.com\/album\/([\w-]+)/);
+                  result.spotify = { album: match ? match[1] : undefined };
+                } else if (/open\.spotify\.com\/artist\/([\w-]+)/.test(inputs.SPOT)) {
+                  const match = inputs.SPOT.match(/open\.spotify\.com\/artist\/([\w-]+)/);
+                  result.spotify = { artist: match ? match[1] : undefined };
+                }
+              }
+              return result;
+            };
+            const additionalSourcesObj = buildAdditionalSources(sources, entry.entryType);
+            const newMeta = {
+              ...((typeof entry.dah_meta === "object" && entry.dah_meta !== null) ? entry.dah_meta : {}),
+              DAH_additional_sources: additionalSourcesObj
+            };
+            const res = await fetch(`/api/entries/${entry.id}`, {
+              method: "PUT",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ dah_meta: newMeta }),
+            });
+            if (!res.ok) {
+              const err = await res.json();
+              throw new Error(err?.error || "Failed to update sources");
+            }
+            // Refetch entry data to update UI
+            const refreshed = await fetch(`/api/entries/${entry.id}`, { cache: "no-store" });
+            const refreshedData = await refreshed.json();
+            setEntry(refreshedData);
+          } catch (err) {
+            console.error("Failed to save sources:", err);
+          }
+        }}
+        initialSources={editSourcesOpen ? (getAdditionalSources(entry?.dah_meta) || {}) : {}}
+        entryType={entry.entryType}
+      />
     </div>
   );
 }

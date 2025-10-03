@@ -105,8 +105,9 @@ const sourceSpecs: Record<SupportedSourceTypeName, SupportedSourceType> = {
   },
 };
 
-export function detectSourceType(url: string): SourceDetection | undefined {
-  for (const spec of Object.values(sourceSpecs)) {
+export function detectSourceType(url: string, types: SupportedSourceTypeName[] = Object.keys(sourceSpecs) as SupportedSourceTypeName[]): SourceDetection | undefined {
+  for (const [key, spec] of Object.entries(sourceSpecs)) {
+    if (!types.includes(key as SupportedSourceTypeName)) continue;
     const m = url.match(spec.match);
     if (m) {
       let entryTypes: EntryType[] = [];

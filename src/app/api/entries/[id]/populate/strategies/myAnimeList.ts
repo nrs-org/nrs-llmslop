@@ -64,7 +64,7 @@ export async function myAnimeListStrategy(entry: any, token: string) {
     if (entry.entryType === "Manga" || entry.entryType === "LightNovel") {
       typePath = "manga";
     }
-    const malUrl = `https://api.myanimelist.net/v2/${typePath}/${malId}?fields=title,main_picture,synopsis,mean,rank,popularity,num_list_users,num_scoring_users,start_date,end_date,media_type,status,genres,my_list_status,num_episodes,episodes,source,average_episode_duration,rating,background,related_anime,related_manga,recommendations,studios`;
+    const malUrl = `https://api.myanimelist.net/v2/${typePath}/${malId}?fields=title,main_picture,synopsis,media_type,status,genres,num_episodes,average_episode_duration,studios`;
     console.log(`Fetching MAL data from ${malUrl}`);
     try {
       const res = await fetch(malUrl, {
@@ -78,7 +78,7 @@ export async function myAnimeListStrategy(entry: any, token: string) {
           title: malData.title,
           description: malData.synopsis,
           status: convertMalStatus(malData.status),
-          type: convertMalType(malData.type),
+          type: convertMalType(malData.media_type),
           picture: malData.main_picture?.large,
           tags: malData.genres?.map((g: any) => g.name),
           synonyms: malData.title_synonyms?.map((s: any) => s),

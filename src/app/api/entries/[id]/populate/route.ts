@@ -2,6 +2,7 @@ import { NextResponse, NextRequest } from "next/server";
 import { PrismaClient } from "@/generated/prisma";
 import { findMyAnimeStrategy } from "./strategies/findMyAnime";
 import { myAnimeListStrategy } from "./strategies/myAnimeList";
+import { aniListStrategy } from "./strategies/aniList";
 import { getValidAccessToken, malConfig } from "@/lib/oauth-link";
 import { auth } from "@/lib/auth";
 import { resolveAnimangaInfo } from "@/lib/animanga";
@@ -24,7 +25,6 @@ export async function POST(request: NextRequest) {
   const session = await auth.api.getSession({ headers: request.headers });
   const userId = session?.user?.id;
     // Strategy: find-my-anime (for anime)
-    const updateData = {};
     try {
       if (entry.entryType === "Anime") {
         await findMyAnimeStrategy(entry);
@@ -32,9 +32,21 @@ export async function POST(request: NextRequest) {
     } catch (err: any) {
       return NextResponse.json({ error: `Failed to fetch mapping from find-my-anime API: ${err?.message || String(err)}` }, { status: 502 });
     }
-    // Strategy: MyAnimeList API (for non-anime entries)
+
+    // Strategy: AniList API (if id_AniList is present)
     try {
-      if(userId) {
+      const meta = typeof entry.dah_meta === "object" && entry.dah_meta !== null ? entry.dah_meta as any : {};
+      if (meta.DAH_additional_sources?.id_AniList && userId) {
+        await aniListStrategy(entry, ""); // If you need a token, pass it here
+      }
+    } catch (err: any) {
+      return NextResponse.json({ error: `Failed to fetch from AniList API: ${err?.message || String(err)}` }, { status: 502 });
+    }
+
+    // Strategy: MyAnimeList API (if id_MyAnimeList is present)
+    try {
+      const meta = typeof entry.dah_meta === "object" && entry.dah_meta !== null ? entry.dah_meta as any : {};
+      if (meta.DAH_additional_sources?.id_MyAnimeList && userId) {
         const token = await getValidAccessToken(malConfig, userId!);
         if(token) {
           console.debug("token", token);

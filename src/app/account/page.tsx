@@ -1,4 +1,3 @@
-
 "use client";
 import React, { useState } from "react";
 import { authClient } from "@/lib/auth-client";
@@ -17,6 +16,7 @@ export default function AccountPage() {
   const [serviceStatus, setServiceStatus] = useState<Record<string, boolean>>({});
   // OAuth linking state
   const [oauthLoading, setOauthLoading] = useState<string | null>(null);
+  const [editSourcesOpen, setEditSourcesOpen] = useState(false);
   const router = useRouter();
 
   React.useEffect(() => {
@@ -230,6 +230,7 @@ export default function AccountPage() {
             </div>
           </CardContent>
         </Card>
+        <Button variant="secondary" onClick={() => setEditSourcesOpen(true)} className="mb-4">Edit Additional Sources</Button>
       </div>
     </div>
   );
