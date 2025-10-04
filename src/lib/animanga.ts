@@ -44,8 +44,8 @@ export type DahMangaInfo = {
 
 const basePriorities: { [source in AnimangaDataSource]: number } = {
   USER: Infinity, // User overrides always have the highest priority
-  MAL: 10,
-  AL: 9,
+  AL: 10,
+  MAL: 9,
   ADB: 8,
   AOD: 8,
   KS: 7,
