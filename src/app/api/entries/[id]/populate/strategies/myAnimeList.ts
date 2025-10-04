@@ -7,6 +7,8 @@ import {
   updateMangaInfo,
 } from "@/lib/animanga";
 
+import escapeHtml from "escape-html";
+
 function convertMalStatus(malStatus: string) {
   switch (malStatus) {
     case "finished_airing":
@@ -74,9 +76,13 @@ export async function myAnimeListStrategy(entry: any, token: string) {
       const malData = await res.json();
       if (malData?.error) throw new Error(`MAL API error: ${malData.error}`);
       if (malData) {
+        if(malData.synopsis) {
+          malData.synopsis = escapeHtml(malData.synopsis).replace(/\n/g, "<br>");
+        }
+        console.debug("malData", malData.synopsis);
         const animangaInfo: AnimangaInfo = {
           title: malData.title,
-          description: malData.synopsis,
+          description: malData.synopsis? malData.synopsis : undefined,
           status: convertMalStatus(malData.status),
           type: convertMalType(malData.media_type),
           picture: malData.main_picture?.large,
