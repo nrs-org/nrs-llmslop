@@ -738,7 +738,6 @@ export default function EntryDetailsPage({ params }: EntryDetailsPageProps) {
         </div>
       )}
 
-      <Button variant="secondary" onClick={() => setEditSourcesOpen(true)} className="mb-4">Edit Additional Sources</Button>
       <EditAdditionalSourcesModal
         open={editSourcesOpen}
         onClose={() => setEditSourcesOpen(false)}
