@@ -616,8 +616,6 @@ export default function EntryDetailsPage({ params }: EntryDetailsPageProps) {
               </div>
               {/* Main info: title, description, synonyms, tags, scores, studios, producers */}
               <div className="flex-1 flex flex-col gap-4">
-                {/* Title (if present) */}
-                {info?.title && <h3 className="text-2xl font-bold mb-2">{info.title}</h3>}
                 {/* Description (HTML, sanitized) */}
                 {info?.description && (
                   <div className="mb-4">
