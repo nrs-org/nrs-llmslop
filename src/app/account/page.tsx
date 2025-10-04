@@ -230,7 +230,6 @@ export default function AccountPage() {
             </div>
           </CardContent>
         </Card>
-        <Button variant="secondary" onClick={() => setEditSourcesOpen(true)} className="mb-4">Edit Additional Sources</Button>
       </div>
     </div>
   );
